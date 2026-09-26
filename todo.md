@@ -29,9 +29,16 @@ All build activities, organized by delivery phase (PRD Part III). This is the wo
 
 ## Bootstrap — repository setup (2026-09-26)
 
+
+- [x] Adopt ZCode as the AI coding workbench; add root `AGENTS.md`, ADR-027, and the governed toolchain guide.
+- [x] Add a reviewable `northstar` ZCode marketplace plugin with planning, verification, contract, and security workflows; no MCP servers or executable hooks enabled by default.
+- [ ] Implement and pin the deterministic developer toolchain: mise, pnpm/Turborepo, uv, Docker Compose, kind/Tilt, GitHub Actions, and Argo CD.
+- [ ] Validate ZCode through representative TypeScript, Python, gateway, and documentation tasks; record evidence for PRD §23.5.
+- [ ] Security-review the enterprise APISIX model channel, provider data classification, retention/logging behavior, and any future MCP/plugin addition.
+
 - [x] Review `prd-v1.md` and record findings → `docs/reviews/prd-v1-review.md` (13 findings; F-01/F-02/F-03/F-10 flagged as planning blockers for Phase 0).
 - [x] Set up directory structure matching the solution architecture, with README stubs (purpose, PRD cross-refs, owning track) in every directory.
-- [x] Record architecture decisions ADR-021–026 per PRD §30 → `docs/adr/` (status: Proposed, pending Phase 0 architecture review).
+- [x] Record architecture decisions ADR-021–027 per PRD §30 → `docs/adr/` (status: Proposed, pending Phase 0 architecture review).
 - [x] Create this build log (`todo.md`) organized by phases.
 
 ---
@@ -49,7 +56,7 @@ All build activities, organized by delivery phase (PRD Part III). This is the wo
 ### Open decisions to close (from PRD review §4)
 
 - [ ] Resolve API path convention: `/api/v2/*` (§15.2) vs `/v1/...` (§19.2) — **before any OpenAPI document is authored** (F-01).
-- [ ] Select graph store engine (F-07) → new ADR-027+.
+- [ ] Select graph store engine (F-07) → new ADR-028+.
 - [ ] Select warehouse/lakehouse engine (F-07) → new ADR.
 - [ ] Select CDC/ingestion tooling for connectors (F-07).
 - [ ] Decide voice/STT posture: add STT architecture or reclassify CONV-01 voice as "Should" (F-03).
@@ -61,7 +68,7 @@ All build activities, organized by delivery phase (PRD Part III). This is the wo
 
 ### Governance
 
-- [ ] Architecture review board approves ADR-021–026 (move status Proposed → Accepted).
+- [ ] Architecture review board approves ADR-021–027 (move status Proposed → Accepted).
 - [ ] Stand up AI/data governance forum and product council (§26).
 
 **Exit:** discovery artifacts approved; open decisions closed and recorded as ADRs where architectural; pilot baselines captured.
@@ -185,12 +192,14 @@ Sprints are two weeks. Tracks A and B follow the PRD §24.2 sprint table verbati
 - [ ] Domain-specific playbooks and sales methodologies.
 - [ ] Federated intelligence across approved internal knowledge sources.
 - [ ] Controlled multi-agent workflow automation with progressive autonomy gated on measured safety and value (§33).
-- [ ] Quarterly architecture and ADR review; supersede/extend ADRs from ADR-027 onward as decisions change.
+- [ ] Quarterly architecture and ADR review; supersede/extend ADRs from ADR-028 onward as decisions change.
 
 ---
 
 ## Change log
 
+- **2026-09-26:** Replaced OpenCode recommendation with governed ZCode toolchain; added ADR-027, root instructions, toolchain guide, reviewed plugin, and PRD §17.9/§23.5 controls.
+
 | Date | Change |
 |---|---|
-| 2026-09-26 | Bootstrap complete: PRD review, directory scaffold, ADR-021–026 (Proposed), this build log. |
+| 2026-09-26 | Bootstrap complete: PRD review, directory scaffold, ADR-021–027 (Proposed), this build log. |

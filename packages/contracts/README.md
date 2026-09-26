@@ -19,3 +19,7 @@ The single source of truth for TypeScript API types and transport functions, gen
 ## Build track
 
 Phase 1, Track B Sprint 2 — see `todo.md`.
+
+## AI-assisted development
+
+ZCode is the standard AI coding workbench for this component. Before editing, follow the repository root [`AGENTS.md`](../../AGENTS.md) and [`docs/development/zcode-toolchain.md`](../../docs/development/zcode-toolchain.md); use the nearest PRD sections and ADRs as authoritative constraints. ZCode-generated changes require human diff review and the same deterministic checks and CI gates as human-authored changes.

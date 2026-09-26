@@ -1,0 +1,11 @@
+{
+  "name": "northstar",
+  "version": "1.0.0",
+  "description": "Reviewed AI-assisted engineering workflows for Sales Northstar",
+  "author": {"name": "Sales Northstar Engineering"},
+  "repository": "https://github.com/ivenkwan/northstar",
+  "license": "Apache-2.0",
+  "keywords": ["northstar", "engineering", "security", "contracts"],
+  "commands": "commands",
+  "skills": "skills"
+}

@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Document reviewed** | `prd-v1.md` — Sales Northstar, Product Proposal and Detailed Technical Specification, v3.0 (consolidated), 26 September 2026 |
+| **Document reviewed** | `prd-v1.md` — Sales Northstar, Product Proposal and Detailed Technical Specification, v3.1 (consolidated), 26 September 2026 |
 | **Review date** | 26 September 2026 |
 | **Reviewer** | Engineering bootstrap review (pre-Phase 0) |
 | **Verdict** | **Approved as planning baseline, with findings.** No blocking defect in the architecture; the findings below should be resolved or explicitly deferred during Phase 0 discovery. |
@@ -11,7 +11,7 @@
 
 Sales Northstar is a secure, mobile-first, multi-agent sales intelligence platform: CRM-agnostic canonical data model (Salesforce + Dynamics 365 first connectors), governed semantic layer, conversational analytics with evidence and lineage, self-configurable declarative dashboards, market intelligence with citations, and controlled write-back actions. Delivery is phased: 2-week discovery, 12–16 week MVP, 8–12 week hardening, ongoing optimization.
 
-Technology baseline: React Native (Strict TypeScript) mobile app, FastAPI mobile BFF, LangGraph agent orchestrator, Apache APISIX as the sole north–south API and AI gateway with enterprise BYOK in HashiCorp Vault, Temporal workflows, PostgreSQL/OpenSearch + pgvector/graph storage, OpenTelemetry observability.
+Technology baseline: React Native (Strict TypeScript) mobile app, FastAPI mobile BFF, LangGraph agent orchestrator, Apache APISIX as the sole north–south API and AI gateway with enterprise BYOK in HashiCorp Vault, Temporal workflows, PostgreSQL/OpenSearch + pgvector/graph storage, OpenTelemetry observability. ZCode is the governed AI engineering workbench under ADR-027; root `AGENTS.md`, reviewed repository workflows, risk-tiered execution modes, and independent CI define its trust boundary.
 
 ## 2. Strengths
 

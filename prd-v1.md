@@ -2,10 +2,10 @@
 
 ## Product Proposal and Detailed Technical Specification
 
-**Version:** 3.0 (consolidated)
+**Version:** 3.1 (consolidated)
 **Status:** Proposed production baseline
 **Date:** 26 September 2026
-**Supersedes:** Product Proposal v1.0; Technical Architecture and Engineering Specification v2.1
+**Supersedes:** Product Proposal v1.0; Technical Architecture and Engineering Specification v2.1; consolidated baseline v3.0
 
 This document consolidates the product proposal and the engineering specification for **Sales Northstar** into a single baseline. Part I covers the product: problem, users, organization model, journeys, functional requirements, agent architecture, and governance. Part II covers the technical baseline: data architecture, the Apache APISIX AI gateway, enterprise BYOK, mobile engineering standards, knowledge-graph integration, APIs, testing, and non-functional requirements. Part III covers delivery: plan, team, backlog, acceptance criteria, risks, and commercial framing.
 
@@ -1018,6 +1018,32 @@ type ApiError = Readonly<{
 
 Unknown network or parsing failures remain `unknown` until narrowed. The UI maps codes to approved user messages and never displays provider keys, upstream bodies, stack traces, or internal secret references.
 
+### 17.9 AI-assisted engineering toolchain
+
+ZCode is the required AI coding Agent Development Environment for this repository. The root `AGENTS.md` is the single version-controlled workspace instruction source; reviewed reusable workflows are distributed through the `northstar` plugin under `tools/zcode`. ZCode supports controlled execution modes, workspace file references, commands, skills, plugins, remote development, browser verification, and custom providers using OpenAI-compatible or Anthropic-compatible protocols.[^36][^37][^38][^39]
+
+The deterministic build toolchain remains independent of the coding agent:
+
+| Concern | Standard |
+|---|---|
+| AI coding workbench | ZCode Agent |
+| Tool/runtime versions | mise |
+| TypeScript monorepo | pnpm workspaces + Turborepo |
+| Python workspace | uv |
+| Local dependencies | Docker Compose |
+| Kubernetes integration | kind + Tilt |
+| Source review and CI | GitHub pull requests, CODEOWNERS, GitHub Actions |
+| Deployment | Argo CD or approved GitOps controller |
+
+AI-generated changes are untrusted until human review and independent CI verification complete. Plan mode is mandatory for broad, schema, dependency, security, and cross-service work; ask-before-changes is mandatory for APISIX, Vault, BYOK, IAM, Kubernetes, CI, release, destructive, and credential-related work. Full Access is prohibited as a default and is allowed only in isolated, disposable, non-sensitive environments.[^36]
+
+The approved model connection is a team-managed enterprise channel, preferably the APISIX development gateway configured as distinct OpenAI-compatible and Anthropic-compatible ZCode providers. Provider keys and local ZCode state must never enter Git. Workspace MCP servers, executable hooks, and third-party plugins are disabled by default because they can execute processes, access files, inherit environment context, or reach networks; enabling them requires source pinning, least privilege, ownership, threat review, and security approval.[^37][^39]
+
+ZCode reads only the user-global and workspace-root `AGENTS.md` instruction sources and does not merge nested project files. Durable team rules therefore belong in the root file, while component detail remains in reviewed README and ADR documents. Local project Memory is disabled for confidential work unless governance approves it; durable knowledge belongs in version control.[^36]
+
+The full onboarding, provider, execution, remote-development, plugin, and migration standard is maintained in `docs/development/zcode-toolchain.md` and governed by ADR-027.
+
+
 ## 18. Knowledge-graph integration
 
 The knowledge-graph layer ingests approved public and enterprise sources into versioned graph bundles; the graph service resolves organizations, industries, domains, groups, people, products, events, and relationships. Graph retrieval combines structural traversal with keyword and vector retrieval before the agent synthesizes an answer.
@@ -1128,6 +1154,7 @@ The BFF validates graph responses, filters attributes by user authorization, and
 | Unsafe fallback | Explicit fallback matrix; no implicit platform-key fallback; feature compatibility tests |
 | Mobile type confusion | Strict compiler flags, runtime schemas, discriminated unions, and generated contracts |
 | Supply-chain compromise | Lockfiles, signed builds, SBOM, dependency scanning, and mobile application attestation |
+| AI coding agent misuse | Root `AGENTS.md`, risk-tiered ZCode modes, no production credentials/data, reviewed plugins/MCP, branch protection, human diff review, and independent CI |
 
 ## 21. Observability
 
@@ -1220,6 +1247,17 @@ Create versioned test cases covering:
 - Accessibility, device-size, and low-bandwidth scenarios pass.
 - E2E tests cover salesperson, manager, domain leader, and group leader authorization scopes.
 
+
+### 23.5 ZCode engineering gates
+
+- Root `AGENTS.md` and ADR-027 remain current with the PRD and architecture decisions.
+- No ZCode local state, task history, project Memory, provider key, MCP credential, production data, or secret-bearing output is committed.
+- The repository `northstar` plugin manifest, commands, and skills pass structural review and contain no unapproved executable hooks or MCP servers.
+- High-risk changes show plan approval, human diff review, relevant test evidence, and security/platform ownership where required.
+- GitHub Actions reproduces all release-relevant checks from a clean checkout; no release depends on a ZCode-local result.
+- Provider profiles preserve separate OpenAI-compatible and Anthropic-compatible routes and apply approved APISIX identity, quota, logging, and DLP policies.
+- A representative TypeScript, Python, gateway, and documentation task passes the standard plan → implement → verify → review workflow.
+
 ---
 
 # Part III — Delivery
@@ -1233,6 +1271,7 @@ Create versioned test cases covering:
 - Select two pilot teams and define baseline measurements.
 - Complete data protection and AI risk assessments.
 - Produce UX prototype, canonical schema, connector plan, threat model, and acceptance suite.
+- Approve ADR-027, the ZCode provider/data policy, root `AGENTS.md`, plugin trust boundary, and agent-assisted development acceptance gates.
 
 ### 24.2 Phase 1: MVP — 10 to 14 weeks
 
@@ -1247,7 +1286,7 @@ Create versioned test cases covering:
 
 | Sprint | Gateway and BYOK | Mobile type safety | Exit condition |
 |---|---|---|---|
-| 1 | Deploy APISIX non-production topology; establish Vault paths | Upgrade approved React Native baseline; enable strict config | Builds and smoke tests green |
+| 1 | Deploy APISIX non-production topology; establish Vault paths | Upgrade approved React Native baseline; enable strict config; bootstrap ZCode instructions/plugin and agent-safe tasks | Builds, smoke tests, and ZCode governance checks green |
 | 2 | Implement native OpenAI and Anthropic routes; header sanitization | Generate API client; introduce Zod boundary package | Golden non-streaming contracts pass |
 | 3 | Implement SSE, limits, telemetry, and typed errors | Typed conversation stream and dashboard unions | Both streaming protocols pass |
 | 4 | Deliver BYOK admin APIs, rotation, and route config controller | Typed admin screens and forms | Credential lifecycle E2E passes |
@@ -1313,7 +1352,7 @@ A practical MVP squad comprises:
 - One QA automation and AI-evaluation engineer.
 - Shared security, privacy, enterprise architecture, DevOps/SRE, CRM administrator, and sales-operations subject matter experts.
 
-The operating model requires a product council for prioritization and an AI/data governance forum for metric certification, data access, model changes, risk exceptions, and incidents. Prompt, model, metric, workflow, connector, policy, and dashboard schemas must all follow version-controlled release management.
+The operating model requires a product council for prioritization and an AI/data governance forum for metric certification, data access, model changes, risk exceptions, and incidents. Prompt, model, metric, workflow, connector, policy, and dashboard schemas must all follow version-controlled release management. ZCode workspace instructions, plugins, commands, skills, provider channels, MCP servers, hooks, and Full Access exceptions are engineering-governance assets and require named ownership and review.
 
 ## 27. Prioritized backlog
 
@@ -1331,6 +1370,7 @@ The operating model requires a product council for prioritization and an AI/data
 | Controlled action | Preview, confirm, idempotent task creation, receipt | No action without valid authorization and confirmation |
 | Governance and audit | Policy, DLP, injection defense, traces, feedback, incident workflow | Security/privacy approval obtained |
 | Operations | CI/CD, feature flags, telemetry, cost budgets, backup/recovery | Runbook and support readiness signed off |
+| AI-assisted engineering | ZCode onboarding, root instructions, reviewed plugin, provider policy, deterministic tasks | ADR-027 and §23.5 gates pass |
 
 ## 28. Acceptance criteria
 
@@ -1361,6 +1401,7 @@ The technical baseline is complete only when all of the following are demonstrab
 9. Navigation, dashboards, graph views, and conversation events use discriminated or branded domain types.
 10. Knowledge-graph queries are authorized, provenance-bearing, and never execute raw model-generated database code.
 11. Security, performance, streaming, chaos, and tenant-isolation tests pass the production release gate.
+12. ZCode is governed by ADR-027 and `AGENTS.md`; no local agent state or credentials are committed, and independent CI reproduces release checks from a clean checkout.
 
 ## 29. Operational runbooks
 
@@ -1386,6 +1427,7 @@ Create and approve the following ADRs:
 - **ADR-024:** Cross-protocol conversion is opt-in and feature-matrix governed.
 - **ADR-025:** React Native uses the Strict TypeScript API and generated end-to-end contracts.
 - **ADR-026:** Dynamic agent/dashboard/graph payloads require runtime schema validation.
+- **ADR-027:** ZCode is the standard AI engineering workbench.
 
 These ADRs are release-governing decisions; an exception requires security, architecture, and product-owner approval.
 
@@ -1403,6 +1445,7 @@ These ADRs are release-governing decisions; an exception requires security, arch
 | Alert fatigue | Disengagement | Severity, digest, quiet hours, frequency cap, learning from explicit preferences |
 | Vendor/model lock-in | Cost and roadmap dependency | Model gateway, portable prompts/evals, canonical APIs, provider-neutral retrieval |
 | Variable AI cost | Budget overrun | Routing, caching, token budgets, smaller models for classification, cost telemetry |
+| AI coding agent error or exfiltration | Defect, secret loss, or policy bypass | ZCode risk modes, redacted context, reviewed plugins/MCP, human review, deterministic CI, and no production execution |
 
 ## 32. Commercial and investment framing
 
@@ -1458,3 +1501,7 @@ The product's durable advantage will not come from a chat interface alone. It wi
 [^33]: [Defining schemas — Zod API reference](https://zod.dev/api)
 [^34]: [Einstein Copilot — Salesforce release notes](https://help.salesforce.com/s/articleView?id=release-notes.rn_einstein_copilot.htm&language=en_US&release=248&type=5)
 [^35]: [What is Agentforce Assistant? — Salesforce](https://www.salesforce.com/ap/agentforce/einstein-copilot/)
+[^36]: [ZCode Agent — ZCode documentation](https://zcode.z.ai/en/docs/agents)
+[^37]: [Connect Models and Custom Providers — ZCode documentation](https://zcode.z.ai/en/docs/configuration)
+[^38]: [Remote Development — ZCode documentation](https://zcode.z.ai/en/docs/remote-development)
+[^39]: [Plugins — ZCode documentation](https://zcode.z.ai/en/docs/plugin)

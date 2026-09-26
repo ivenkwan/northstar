@@ -2,7 +2,7 @@
 
 Enterprise sales intelligence assistant — a secure, mobile-first, multi-agent platform that turns CRM, target, activity, organizational, and market data into a conversational, self-configurable dashboard. CRM-agnostic, deployable in a private cloud or enterprise VPC.
 
-**Status:** Pre-Phase 0 (bootstrap complete). Specification: [`prd-v1.md`](prd-v1.md) (v3.0 consolidated). Working plan: [`todo.md`](todo.md).
+**Status:** Pre-Phase 0 (bootstrap complete). Specification: [`prd-v1.md`](prd-v1.md) (v3.1 consolidated). Working plan: [`todo.md`](todo.md). AI coding standard: ZCode (`AGENTS.md`, ADR-027).
 
 ## Key documents
 
@@ -11,8 +11,10 @@ Enterprise sales intelligence assistant — a secure, mobile-first, multi-agent 
 | [`prd-v1.md`](prd-v1.md) | Product proposal and detailed technical specification |
 | [`todo.md`](todo.md) | Build log and plan — all activities by phase |
 | [`docs/reviews/prd-v1-review.md`](docs/reviews/prd-v1-review.md) | PRD review: strengths, findings, open decisions |
-| [`docs/adr/`](docs/adr/README.md) | Architecture decision records (ADR-021–026) |
+| [`docs/adr/`](docs/adr/README.md) | Architecture decision records (ADR-021–027) |
 | [`docs/runbooks/`](docs/runbooks/README.md) | Operational runbooks (Phase 1, Sprint 6) |
+| [`docs/development/zcode-toolchain.md`](docs/development/zcode-toolchain.md) | ZCode AI-assisted engineering standard and onboarding |
+| [`AGENTS.md`](AGENTS.md) | Repository-wide ZCode instructions and non-negotiable controls |
 
 ## Repository structure
 
@@ -42,6 +44,7 @@ infra/
   observability/      OpenTelemetry, metrics, dashboards
 tools/
   codegen/            OpenAPI → TypeScript contract pipeline
+  zcode/              Reviewed ZCode commands and delivery skill
 tests/
   golden/             Permission and gateway conformance suites
   evals/              AI evaluation datasets and harnesses
@@ -59,6 +62,7 @@ Each directory contains a README describing its purpose, the governing PRD secti
 - **Enterprise BYOK**: provider keys live only in HashiCorp Vault; fail-closed lifecycle controls — [ADR-023](docs/adr/ADR-023-byok-vault-fail-closed.md).
 - **Mobile** is React Native with the Strict TypeScript API and generated end-to-end contracts — [ADR-025](docs/adr/ADR-025-react-native-strict-typescript-contracts.md).
 - Dynamic agent/dashboard/graph payloads are runtime-validated — [ADR-026](docs/adr/ADR-026-runtime-schema-validation.md); cross-protocol conversion is opt-in — [ADR-024](docs/adr/ADR-024-opt-in-cross-protocol-conversion.md).
+- **AI-assisted engineering** uses ZCode under root `AGENTS.md`, [ADR-027](docs/adr/ADR-027-zcode-ai-engineering-workbench.md), reviewed repository workflows, risk-tiered execution modes, and independent CI verification.
 
 ## Delivery phases
 

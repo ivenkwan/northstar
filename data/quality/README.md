@@ -13,3 +13,7 @@ Data-layer evaluation and reconciliation suite (PRD §23.1: completeness, freshn
 ## Build track
 
 Phase 1, Track C and Track H — see `todo.md`.
+
+## AI-assisted development
+
+ZCode is the standard AI coding workbench for this component. Before editing, follow the repository root [`AGENTS.md`](../../AGENTS.md) and [`docs/development/zcode-toolchain.md`](../../docs/development/zcode-toolchain.md); use the nearest PRD sections and ADRs as authoritative constraints. ZCode-generated changes require human diff review and the same deterministic checks and CI gates as human-authored changes.

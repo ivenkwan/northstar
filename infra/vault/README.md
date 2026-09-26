@@ -17,3 +17,7 @@ Stores provider API keys for the enterprise BYOK model (PRD §16; ADR-023). Conf
 ## Build track
 
 Phase 1, Track A Sprint 1 (paths) and Sprint 4 (lifecycle) — see `todo.md`.
+
+## AI-assisted development
+
+ZCode is the standard AI coding workbench for this component. Before editing, follow the repository root [`AGENTS.md`](../../AGENTS.md) and [`docs/development/zcode-toolchain.md`](../../docs/development/zcode-toolchain.md); use the nearest PRD sections and ADRs as authoritative constraints. ZCode-generated changes require human diff review and the same deterministic checks and CI gates as human-authored changes.

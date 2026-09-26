@@ -1,0 +1,16 @@
+{
+  "name": "northstar-engineering",
+  "description": "Reviewed ZCode workflows for Sales Northstar",
+  "pluginRoot": "tools/zcode/plugins",
+  "plugins": [
+    {
+      "name": "northstar",
+      "source": "./northstar",
+      "description": "Planning, verification, contract, and security workflows for Sales Northstar",
+      "version": "1.0.0",
+      "category": "Developer Tools",
+      "tags": ["northstar", "engineering", "security", "contracts"],
+      "strict": true
+    }
+  ]
+}

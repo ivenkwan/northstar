@@ -12,10 +12,11 @@ Architecture decisions for Sales Northstar, in the format defined by [TEMPLATE.m
 | [ADR-024](ADR-024-opt-in-cross-protocol-conversion.md) | Cross-protocol conversion is opt-in and feature-matrix governed | Proposed | §15.5 |
 | [ADR-025](ADR-025-react-native-strict-typescript-contracts.md) | React Native uses the Strict TypeScript API and generated end-to-end contracts | Proposed | §12, §17 |
 | [ADR-026](ADR-026-runtime-schema-validation.md) | Dynamic agent/dashboard/graph payloads require runtime schema validation | Proposed | §17.1, §17.4, §18 |
+| [ADR-027](ADR-027-zcode-ai-engineering-workbench.md) | ZCode is the standard AI engineering workbench | Proposed | §17.9, §20, §23.5, §28.2 |
 
 ## Numbering note
 
-Numbering begins at **ADR-021** to remain traceable to PRD §30, which names these decisions ADR-021–026. ADR-001–020 belonged to the superseded Product Proposal v1.0 / Technical Architecture v2.1 documents and were not carried into this repository. New decisions continue from ADR-027.
+Numbering begins at **ADR-021** to remain traceable to PRD §30, which names these decisions ADR-021–026. ADR-001–020 belonged to the superseded Product Proposal v1.0 / Technical Architecture v2.1 documents and were not carried into this repository. New decisions continue from ADR-028.
 
 ## Governance
 
