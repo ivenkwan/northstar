@@ -1,2 +1,25 @@
 # ZCode session artifacts
 .zcode/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Node
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Env & secrets — never commit (AGENTS.md)
+.env
+.env.*
+*.key
+*.pem
+
+# Local tooling
+.turbo/
+mise.lock

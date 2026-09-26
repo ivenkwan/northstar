@@ -1,0 +1,18 @@
+{
+  "name": "@northstar/validation",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": {
+    "check": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "typescript": "5.6.3",
+    "vitest": "^2.1.8"
+  }
+}

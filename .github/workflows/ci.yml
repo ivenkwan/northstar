@@ -1,0 +1,49 @@
+# CI reproduces all release-relevant checks from a clean checkout (PRD §23.5):
+# nothing release-gating depends on a ZCode-local result.
+name: ci
+
+on:
+  push: { branches: [main] }
+  pull_request: {}
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with: { python-version: "3.12" }
+      - name: Sync workspace
+        run: uv sync --frozen
+      - name: Lint
+        run: uv run ruff check services tests
+      - name: Tests (services + golden suites + eval gates)
+        run: uv run pytest -q
+
+  typescript:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - uses: pnpm/action-setup@v4
+        with: { version: "9.15.0" }
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Generate contracts
+        run: pnpm contracts:generate
+      - name: Contract drift check (§17.4)
+        run: git diff --exit-code -- packages/contracts/src/generated/schema.d.ts
+      - name: Typecheck + tests (all packages)
+        run: pnpm turbo check test
+
+  schemas:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate OpenAPI JSON
+        run: python3 -c "import json; json.load(open('services/bff/openapi/openapi.json')); print('openapi ok')"
+      - name: Validate metric catalog YAML
+        run: python3 -c "import yaml; d=yaml.safe_load(open('data/semantic-layer/metric-catalog.yaml')); assert d['metrics'], 'catalog empty'; print('catalog ok')"
+      - name: Validate gateway routes YAML
+        run: python3 -c "import yaml; d=yaml.safe_load(open('infra/apisix/routes.yaml')); assert d['routes'], 'routes empty'; print('routes ok')"

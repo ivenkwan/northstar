@@ -1,0 +1,13 @@
+[project]
+name = "northstar-byok"
+version = "0.1.0"
+description = "BYOK credential lifecycle service (PRD §16; ADR-023 fail-closed)"
+requires-python = ">=3.12"
+dependencies = ["pydantic>=2.9", "fastapi>=0.115"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["byok"]

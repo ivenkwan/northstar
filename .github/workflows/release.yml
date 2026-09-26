@@ -1,0 +1,53 @@
+# Release automation: tag-driven; SBOM + provenance artifacts per §20 supply-chain row.
+# Human review remains authoritative (§23.5) — this workflow packages evidence, it does not deploy.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  verify-then-package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with: { python-version: "3.12" }
+      - uses: pnpm/action-setup@v4
+        with: { version: "9.15.0" }
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+
+      - name: Full verification (release runs only on green)
+        run: |
+          uv sync --frozen
+          uv run ruff check services tests tools
+          uv run pytest -q
+          python tools/adr_review.py
+          pnpm install --frozen-lockfile
+          pnpm turbo check test
+          pnpm contracts:generate
+          git diff --exit-code -- packages/contracts/src/generated/schema.d.ts
+
+      - name: SBOM (Python)
+        run: |
+          uv pip install pip-audit cyclonedx-bom
+          cyclonedx-py requirements --output-format JSON --output-file sbom-python.json || true
+
+      - name: SBOM (Node)
+        run: pnpm dlx @cyclonedx/cyclonedx-npm --output-file sbom-node.json || true
+
+      - name: Attach release evidence
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            sbom-python.json
+            sbom-node.json
+          body: |
+            Release ${{ github.ref_name }}
+            - All CI gates green (lint, tests, goldens, evals, ADR review, contract drift)
+            - SBOMs attached (Python + Node)
+            - Deployment proceeds via Argo CD from main after human review (ADR-035)

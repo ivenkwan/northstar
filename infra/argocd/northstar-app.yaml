@@ -1,0 +1,19 @@
+# Argo CD application (ADR-035): Git is the only path to production.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: northstar
+  namespace: argocd
+  finalizers: [resources-finalizer.argocd.argoproj.io]
+spec:
+  project: northstar
+  source:
+    repoURL: https://github.com/ivenkwan/northstar.git
+    targetRevision: main
+    path: infra/k8s/base
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: northstar
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }   # drift reverts to Git (§15.1 declarative posture)
+    syncOptions: [CreateNamespace=false, ApplyOutOfSyncOnly=true]

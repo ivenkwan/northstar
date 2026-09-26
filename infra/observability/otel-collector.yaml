@@ -1,0 +1,61 @@
+# OpenTelemetry Collector (PRD §21): metrics/traces/logs without prompt or response content.
+receivers:
+  otlp:
+    protocols:
+      grpc: {}
+      http: {}
+  # APISIX access logs (structured, payload logging disabled at the gateway)
+  filelog/apisix:
+    include: [/var/log/apisix/access.log]
+    operators:
+      - type: json_parser
+        parse_from: body
+      - type: remove
+        field: attributes.prompt
+      - type: remove
+        field: attributes.response
+
+processors:
+  batch: {}
+  memory_limiter: { check_interval: 1s, limit_mib: 512 }
+  # Redaction belt-and-braces (§21): drop any unexpected content-bearing fields.
+  attributes/redact:
+    actions:
+      - key: prompt
+        action: delete
+      - key: completion
+        action: delete
+      - key: authorization
+        action: delete
+      - key: x-api-key
+        action: delete
+  resource/tenant:
+    attributes:
+      - key: tenant.id
+        from_attribute: x-tenant-id
+        action: upsert
+
+exporters:
+  prometheus:
+    endpoint: 0.0.0.0:8889
+  otlp/tempo:
+    endpoint: tempo:4317
+    tls: { insecure: true }
+  # Audit-grade log sink (immutable store is downstream of this collector)
+  file/audit:
+    path: /var/log/northstar/audit.json
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, resource/tenant, batch]
+      exporters: [otlp/tempo]
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, resource/tenant, batch]
+      exporters: [prometheus]
+    logs:
+      receivers: [otlp, filelog/apisix]
+      processors: [memory_limiter, attributes/redact, resource/tenant, batch]
+      exporters: [file/audit]

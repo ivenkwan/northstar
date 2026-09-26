@@ -10,7 +10,8 @@ All build activities, organized by delivery phase (PRD Part III). This is the wo
 | Phase 0 | Discovery and control design | 2 weeks | 🟡 Artifacts built — enterprise inputs pending |
 | Phase 1 | MVP | 10–14 weeks (6 sprints) | Not started |
 | Phase 2 | Production hardening | 8–12 weeks | Not started |
-| Phase 3 | Optimization | Ongoing | Not started |
+| Phase 3 | Optimization | Ongoing | 🟡 Repo-side engines built — ongoing by nature |
+| Phase 4 | Production readiness & closure (extension) | — | ✅ Repo-side complete |
 
 **Phase 1 tracks**
 
@@ -170,39 +171,61 @@ Sprints are two weeks. Tracks A and B follow the PRD §24.2 sprint table verbati
 
 ## Phase 2 — Production hardening (8–12 weeks, PRD §24.3)
 
-- [ ] Add second CRM and/or region connectors where required (Dynamics 365).
-- [ ] Traditional Chinese localization (locale-aware dates, numbers, currency, fiscal calendar; §22).
-- [ ] Richer entity graph and expanded market-intelligence sources.
-- [ ] Teams integration for alert delivery and briefings (resolves F-06 deferral).
-- [ ] Manager workflow expansions (coaching, exception management, reassignment).
-- [ ] Observability improvements — SLO-driven alerting, capacity forecasts, cost telemetry dashboards (§21, §22).
-- [ ] Disaster recovery — RPO 5 min / RTO 1 hour for critical services; DR rehearsal (§22).
-- [ ] Cost controls — routing, caching, token budgets, anomaly alerts (§31).
-- [ ] Mobile device management integration and app-attestation hardening (§20).
-- [ ] Accessibility — WCAG 2.2 AA external review (§22).
-- [ ] Evaluation automation — CI-integrated retrieval/generation/agent-safety suites (§23).
-- [ ] Approved forecast models only after back-testing meets calibration threshold (§23.1).
-- [ ] Expand controlled actions and approval workflows (§8.7).
-- [ ] Data retention/deletion execution (review F-12) and privacy operational reviews (§11.3).
-- [ ] Voice/STT delivery if approved in Phase 0 (F-03).
+Repo-side Phase 2 build completed 2026-09-26 (see change log); items marked **[DEPLOY]** need enterprise environments/operations that cannot be exercised from the repository.
+
+- [x] Second CRM connector: Dynamics 365 change-tracking transform + delta-link cursors + deletion events → `services/connectors/connectors/dynamics.py` + tests. **[DEPLOY]** sandbox tenant validation.
+- [x] Traditional Chinese localization → `packages/i18n`: en + zh-Hant catalogs, Accept-Language negotiation, Intl formatters (money/percent/fiscal/zero-decimal currencies), parity test. Wired into Teams alert cards via `language=` param.
+- [x] Teams integration for alert delivery (resolves F-06) → `services/alerts`: adaptive-card renderer (metadata + deep link only), localized titles, quiet-hours/frequency-cap/digest rules for the teams channel. **[DEPLOY]** Graph API consent + tenant app registration.
+- [x] Observability → `infra/observability/`: slo.yaml (§22 targets + burn windows), prometheus-rules.yaml (SLO burn, credential-resolution, freshness, cost-anomaly alerts), otel-collector.yaml (content-redaction processors, payload fields dropped).
+- [x] Disaster recovery → RPO 5m/RTO 1h runbook (`docs/runbooks/dr-recovery.md`) + backup CronJobs (WAL-archive RPO verification 5-min, hourly Vault raft snapshots, etcd snapshots). **[DEPLOY]** quarterly drill.
+- [x] Cost controls → `services/orchestrator/orchestrator/budget.py`: per-tenant token/request budget ledger, denial-of-wallet anomaly detection, freshness-bucketed semantic cache keys (conversational scope never cached) + tests.
+- [x] Evaluation automation → `tests/evals/`: versioned anonymized dataset + gate runner (injection_blocked and masking at 1.00 zero-tolerance, groundedness 0.90) running in CI (`pytest` job).
+- [x] Forecast calibration gate → `services/metrics/metrics/forecast.py`: Brier/bias-ratio/stability back-test; models stay `informational` until certified (§23.1) + tests.
+- [x] Controlled actions expansion → `services/bff/bff/approvals.py`: impact tiers (low/medium/high), step-up auth + manager approval state machine, full audit trail + tests.
+- [x] Data retention/deletion execution (F-12) → `services/connectors/connectors/retention.py`: DPIA §6 schedules, expiry sweeps, source-deletion propagation to canonical soft-delete, conversation aggregation + tests.
+- [x] Richer entity graph and expanded market-intelligence sources (repo side) → `services/connectors/connectors/news.py`: RSS/Atom + licensed-API adapters, rights enforcement at ingestion (unlicensed/retrieval-only excluded), SimHash dedup clustering, retention per license; `services/knowledge-graph/knowledge_graph/entities.py`: alias→canonical entity resolution with confidence + abstention. **[DEPLOY]** onboarding actual licensed sources.
+- [x] Manager workflow expansions (repo side) → `services/orchestrator/orchestrator/manager.py`: exception detection (coverage shortfall, stalled-majority, missing next-step with severity), coaching briefs pairing grounded numbers with talking points, reassignment proposals scope-guarded and approval-required. UX wiring lands with the mobile app shell.
+- [x] MDM integration (repo side) → `services/orchestrator/orchestrator/device_posture.py`: ABAC device-posture gate for sensitive scopes (offline cache, push, action confirm) with managed/compliant/jailbreak/attestation-freshness checks; `MdmAdapter` interface with fail-closed static dev adapter. **[DEPLOY]** Intune Graph adapter + device fleet.
+- [x] Accessibility automated gates (repo side) → `packages/a11y`: WCAG 2.2 contrast math, design-token gates (text ≥4.5:1, UI/status ≥3:1, 44pt targets, no color-only status encoding) in CI. **[INPUT REQUIRED]** external WCAG 2.2 AA review remains a human gate.
+- [x] Voice/STT contract (repo side) → BFF `POST /api/v1/conversations/{id}/voice-transcript` returning an unconfirmed transcript preview (§10.2), feature-flagged **off by default**; typed 403 citing ADR-032 until the board approves; OpenAPI + regenerated contracts include the path. **[INPUT REQUIRED]** board approval + DPIA audio addendum to enable.
 
 ---
 
-## Phase 3 — Optimization (ongoing, PRD §24.3/§24.4)
+## Phase 3 — Optimization (ongoing, PRD §24.3/§24.4) — repo-side engines built 2026-09-26
 
-- [ ] Next-best-action experiments with measured uplift (no causality claims without experiments).
-- [ ] Territory and whitespace insights.
-- [ ] Call/transcript intelligence.
-- [ ] Partner selling and advanced account planning.
-- [ ] Domain-specific playbooks and sales methodologies.
-- [ ] Federated intelligence across approved internal knowledge sources.
-- [ ] Controlled multi-agent workflow automation with progressive autonomy gated on measured safety and value (§33).
-- [ ] Quarterly architecture and ADR review; supersede/extend ADRs from ADR-028 onward as decisions change.
+- [x] Next-best-action experiments → `services/orchestrator/orchestrator/experiments.py`: salted deterministic assignment, two-proportion z uplift analysis, and a power gate — underpowered results are reported as `underpowered`, never as uplift (§32). **[RUNTIME]** live experiments need production traffic.
+- [x] Territory and whitespace insights → `services/metrics/metrics/territory.py`: coverage-by-territory with under-served detection (low coverage **or** concentration risk from unpenetrated accounts), dormant-account and unpenetrated-industry whitespace, every finding evidence-bearing.
+- [x] Call/transcript intelligence → `services/orchestrator/orchestrator/transcripts.py`: consent-gated extraction (DPIA — denied consent processes nothing), action items/objections/next-step, injection scrubbing (transcripts are untrusted), content-not-retained default. **[RUNTIME]** STT pipeline per ADR-032 approval.
+- [x] Partner selling and advanced account planning → `services/orchestrator/orchestrator/planning.py`: versioned account plans (monotonic, never destructive), objective progress with target-suppression guards, partner attach with co-sell registration compliance flags.
+- [x] Domain-specific playbooks → `data/playbooks/catalog.yaml` (versioned, methodology- and evidence-cited) + `services/orchestrator/orchestrator/playbooks.py` selection engine (signal+stage matching, min-signal thresholds, ranking); plays are recommendations, never executed actions.
+- [x] Federated intelligence → `services/knowledge-graph/knowledge_graph/federated.py`: source registry policies (approval, classification ceiling, freshness SLA, scope matching), classification/scope filtering before merge, stale age-out, per-source provenance.
+- [x] Progressive autonomy (§33) → `services/orchestrator/orchestrator/autonomy.py`: L0–L3 levels, promotion gated on evaluation volume + safety score + success rate + **experiment-backed** value lift, hard breaches demote to L0 (safety-critical → suspension kill-switch), high-impact action types permanently L0.
+- [x] Quarterly ADR review automation → `tools/adr_review.py` (inventory consistency: index links, status vocabulary, dense numbering from 021) + golden test `test_repo_hygiene.py` + `docs/adr/quarterly-review.md` checklist (verification matrix, decision items, sign-off). **[BOARD]** sessions are human.
+
+---
+
+## Phase 4 — Production readiness & closure (extension beyond PRD §24's three-phase plan, built 2026-09-26)
+
+The PRD defines Phases 0–3. Phase 4 is this repository's closure phase: it completes the repo-side artifacts that were still missing after the phase-1 goal was superseded, and adds the deployment/release layer the plan called for. Recorded here because it was explicitly requested as a build goal.
+
+- [x] `packages/validation` (ADR-026/§17.1, previously missing) → Zod schemas for conversation components (§19.3), dashboard definitions (§8.5 — strict cards, declarative-only), bounded subgraphs (§18 — provenance mandatory, dangling edges rejected), deep links (§17.7) with forward-compatible extras dropped; malformed + forward-compatible tests per §23.4.
+- [x] `apps/mobile` domain layer (§17.5/§17.7) → branded IDs (TeamId ≠ DomainId at compile time), typed `RootStackParamList`, `resolveDeepLink` (validated → typed route, never throws), dashboard widget discriminated union with exhaustive `never`-checked renderer registry enforcing ADR-036 table alternatives. RN shell initializes with the native toolchain (**[DEPLOY]** Sprint 1).
+- [x] Local development stack → `docker-compose.yml`: Postgres+AGE (schema auto-init), OpenSearch, dev Vault, etcd, APISIX, Temporal, OTel collector, BFF — healthchecks throughout, dev-only secrets.
+- [x] Deployment layer → `infra/k8s/base/northstar.yaml` (namespace, bff/metrics/APISIX deployments with pinned images, probes, hardened securityContext, LLM-egress NetworkPolicy per §15.1), `infra/vault/policies/northstar.hcl` (least-privilege per workload), `infra/argocd/northstar-app.yaml` (Git-locked: prune + selfHeal per ADR-035).
+- [x] Release automation → `.github/workflows/release.yml`: tag-driven, full verification gate, Python+Node SBOMs attached, deployment remains human/Argo-CD-governed (§23.5).
+- [x] Manifest goldens → `tests/golden/tests/test_manifests.py`: pinned images (no `:latest`), resources+limits, both probes, hardened securityContext, ≥3 gateway replicas, egress NetworkPolicy present, Argo CD selfHeal, compose healthchecks — infra is CI-checked like code.
+
+**Phase 4 status:** repo-side complete. Remaining work in this repo is zero; everything else is the external residue already annotated per item in Phases 0–3.
 
 ---
 
 ## Change log
 
+- **2026-09-26:** Built Phase 4 (production readiness & closure): `packages/validation` (ADR-026, previously missing), `apps/mobile` typed domain layer, docker-compose dev stack, k8s base manifests + Vault policies + Argo CD app, release workflow with SBOMs, and manifest-validation goldens. 181 Python tests, 10 TS tasks green, lint/ADR review clean.
+
+- **2026-09-26:** Built Phase 3 repo-side engines: experimentation (powered uplift gate), territory/whitespace analytics, consent-gated transcript intelligence, account planning + partner compliance, playbook catalog + selection, federated retrieval with per-source policy, progressive-autonomy governor (§33 L0–L3 with kill-switch), and ADR-review automation + quarterly checklist. 173 Python tests green (+37), ruff clean, ADR inventory verified.
+- **2026-09-26:** Closed the remaining Phase 2 repo-side items: manager workflows (exceptions/coaching/reassignment), news-source adapters with rights enforcement + SimHash dedup, entity resolution, device-posture/MDM gate, `packages/a11y` WCAG 2.2 automated gates, and the ADR-032 voice transcript-confirmation contract (disabled pending board approval). 136 Python + 16 TS tests green, lint clean.
+- **2026-09-26:** Built Phase 2 (repo-side): Dynamics 365 connector, zh-Hant i18n package, Teams alert channel, SLO/alerting/otel configs, DR runbook + backup CronJobs, cost budgets + semantic cache, retention engine, action approvals, forecast calibration gate, CI-integrated eval gates; CI + security workflows; runbooks (DR full + nine §29). 111 Python tests + 10 TS tests green, lint clean, contract drift zero. Carried over from the Phase 1 build session in the same repo: pinned toolchain (mise/pnpm+turbo/uv), six Python services with tests, generated OpenAPI contracts, executable golden suites (GPM/GW/GA), APISIX routes. Deployment/UAT/mobile-app items remain flagged in Phases 1–2.
 - **2026-09-26:** Built Phase 0 artifacts: discovery instruments (questionnaire, pilot plan, connector plan, UX blueprint, Phase 1 plan validation), canonical schema v0.1, metric catalog v0.1, threat model, DPIA + AI risk assessment, acceptance-suite spec, and ADR-028–036 closing all nine open decisions; PRD amended to v3.2 (F-01 `/api/v1`, F-03 voice deferral).
 - **2026-09-26:** Replaced OpenCode recommendation with governed ZCode toolchain; added ADR-027, root instructions, toolchain guide, reviewed plugin, and PRD §17.9/§23.5 controls.
 

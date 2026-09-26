@@ -1,0 +1,102 @@
+# Local development stack (§17.9 'Local dependencies: Docker Compose').
+# Production topology is RKE2 via Terraform + Argo CD (ADR-035); this stack mirrors
+# the same components for laptop development. Secrets are dev-only values.
+name: northstar
+
+services:
+  postgres:
+    image: apache/age:PG16_v1.5.0        # AGE graph extension per ADR-029
+    environment:
+      POSTGRES_USER: northstar
+      POSTGRES_PASSWORD: dev-only-not-a-secret
+      POSTGRES_DB: northstar
+    ports: ["5432:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U northstar"]
+      interval: 5s
+      retries: 10
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./data/canonical-model/schema.sql:/docker-entrypoint-initdb.d/00-schema.sql:ro
+
+  opensearch:
+    image: opensearchproject/opensearch:2.18.0
+    environment:
+      discovery.type: single-node
+      DISABLE_SECURITY_PLUGIN: "true"    # dev only; production uses TLS + auth
+      OPENSEARCH_JAVA_OPTS: -Xms512m -Xmx512m
+    ports: ["9200:9200"]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9200 >/dev/null"]
+      interval: 10s
+      retries: 12
+
+  vault:
+    image: hashicorp/vault:1.17
+    cap_add: [IPC_LOCK]
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: dev-root   # dev server only — never in production (ADR-023)
+      VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
+    ports: ["8200:8200"]
+    healthcheck:
+      test: ["CMD", "vault", "status", "-address=http://127.0.0.1:8200"]
+      interval: 5s
+      retries: 10
+
+  etcd:
+    image: gcr.io/etcd-development/etcd:v3.5.17
+    command: ["etcd", "--listen-client-urls=http://0.0.0.0:2379", "--advertise-client-urls=http://etcd:2379"]
+    ports: ["2379:2379"]
+    healthcheck:
+      test: ["CMD", "etcdctl", "endpoint", "health", "--endpoints=http://localhost:2379"]
+      interval: 10s
+      retries: 10
+
+  apisix:
+    image: apache/apisix:3.13.0-centos
+    depends_on:
+      etcd: { condition: service_healthy }
+    environment:
+      APISIX_STANDALONE: "false"
+    ports: ["9080:9080", "9180:9180"]   # data plane / admin (admin bound to localhost in real deployments, §15.1)
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9080/apisix/status >/dev/null"]
+      interval: 10s
+      retries: 12
+
+  temporal:
+    image: temporalio/auto-setup:1.27.0
+    depends_on:
+      postgres: { condition: service_healthy }
+    environment:
+      DB: postgres12
+      DB_PORT: 5432
+      POSTGRES_USER: northstar
+      POSTGRES_PWD: dev-only-not-a-secret
+      POSTGRES_SEEDS: postgres
+    ports: ["7233:7233"]
+    healthcheck:
+      test: ["CMD", "tctl", "--address", "temporal:7233", "cluster", "health"]
+      interval: 15s
+      retries: 15
+
+  otel-collector:
+    image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector:0.116.0
+    volumes:
+      - ./infra/observability/otel-collector.yaml:/etc/otelcol/config.yaml:ro
+    ports: ["4317:4317", "8889:8889"]
+
+  bff:
+    build: { context: ./services/bff }
+    depends_on:
+      otel-collector: { condition: service_started }
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+    ports: ["8000:8000"]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8000/healthz >/dev/null"]
+      interval: 10s
+      retries: 10
+
+volumes:
+  pgdata:

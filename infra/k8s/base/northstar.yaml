@@ -1,0 +1,141 @@
+# Northstar base workload manifests (RKE2 target, ADR-035).
+# Deployed exclusively via Argo CD (infra/argocd/). Images are digest/tag-pinned;
+# :latest is rejected by tests/golden/tests/test_manifests.py.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: northstar
+  labels: { name: northstar, pod-security.kubernetes.io/enforce: restricted }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bff
+  namespace: northstar
+spec:
+  replicas: 3
+  selector: { matchLabels: { app: bff } }
+  template:
+    metadata:
+      labels: { app: bff }
+      annotations: { prometheus.io/scrape: "true", prometheus.io/port: "8000" }
+    spec:
+      serviceAccountName: bff
+      containers:
+        - name: bff
+          image: ghcr.io/northstar/bff:0.1.0
+          ports: [{ containerPort: 8000 }]
+          env:
+            - { name: OTEL_EXPORTER_OTLP_ENDPOINT, value: http://otel-collector:4317 }
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { cpu: "1", memory: 512Mi }
+          livenessProbe: { httpGet: { path: /healthz, port: 8000 }, periodSeconds: 15 }
+          readinessProbe: { httpGet: { path: /healthz, port: 8000 }, periodSeconds: 5 }
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: bff, namespace: northstar }
+spec:
+  selector: { app: bff }
+  ports: [{ port: 80, targetPort: 8000 }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metrics
+  namespace: northstar
+spec:
+  replicas: 3
+  selector: { matchLabels: { app: metrics } }
+  template:
+    metadata:
+      labels: { app: metrics }
+      annotations: { prometheus.io/scrape: "true", prometheus.io/port: "8000" }
+    spec:
+      serviceAccountName: metrics
+      containers:
+        - name: metrics
+          image: ghcr.io/northstar/metrics:0.1.0
+          ports: [{ containerPort: 8000 }]
+          env:
+            - { name: DATABASE_URL, valueFrom: { secretKeyRef: { name: postgres-readonly, key: url } } }
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { cpu: "2", memory: 1Gi }
+          livenessProbe: { httpGet: { path: /api/v1/metrics/attainment_pct/lineage, port: 8000 }, periodSeconds: 20 }
+          readinessProbe: { httpGet: { path: /api/v1/metrics/attainment_pct/lineage, port: 8000 }, periodSeconds: 5 }
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: metrics, namespace: northstar }
+spec:
+  selector: { app: metrics }
+  ports: [{ port: 80, targetPort: 8000 }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: apisix-dataplane
+  namespace: northstar
+  annotations:
+    northstar/note: "sole north-south gateway (ADR-021); ≥3 replicas across failure zones (§15.1)"
+spec:
+  replicas: 3
+  selector: { matchLabels: { app: apisix-dataplane } }
+  template:
+    metadata:
+      labels: { app: apisix-dataplane }
+    spec:
+      serviceAccountName: apisix
+      containers:
+        - name: apisix
+          image: apache/apisix:3.13.0-centos
+          ports: [{ containerPort: 9080 }]
+          env:
+            - { name: APISIX_STANDALONE, value: "false" }
+          resources:
+            requests: { cpu: 250m, memory: 256Mi }
+            limits: { cpu: "2", memory: 1Gi }
+          livenessProbe: { httpGet: { path: /apisix/status, port: 9080 }, periodSeconds: 15 }
+          readinessProbe: { httpGet: { path: /apisix/status, port: 9080 }, periodSeconds: 5 }
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: apisix, namespace: northstar }
+spec:
+  selector: { app: apisix-dataplane }
+  ports: [{ port: 80, targetPort: 9080 }]
+---
+# §15.1: LLM egress restricted to approved provider FQDNs / the enterprise egress proxy.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: llm-egress-allowlist
+  namespace: northstar
+spec:
+  podSelector: { matchLabels: { app: apisix-dataplane } }
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - ipBlock: { cidr: 10.0.0.0/8 }   # enterprise egress proxy range (Terraform-parameterized)
+      ports: [{ protocol: TCP, port: 443 }]
+    - to:                                 # in-cluster dependencies
+        - podSelector: {}
+      ports:
+        - { protocol: TCP, port: 2379 }   # etcd
+        - { protocol: TCP, port: 4317 }   # otel

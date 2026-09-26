@@ -1,0 +1,46 @@
+# PrometheusRule: SLO burn rates + cost/credential alerts (PRD §21, §31; T-02/T-12).
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: northstar-slo-burn-rates
+  namespace: northstar
+spec:
+  groups:
+    - name: slo-burn-rates
+      rules:
+        - alert: UserAPIErrorBudgetFastBurn
+          expr: |
+            sum(rate(http_requests_total{prefix="/api/v1/",code=~"5.."}[1h]))
+              / sum(rate(http_requests_total{prefix="/api/v1/"}[1h])) > 0.00144
+          labels: { severity: critical, owner: platform }
+          annotations:
+            summary: "User API consuming error budget 14.4x faster than allowed (§22)"
+        - alert: DashboardLatencySlowBurn
+          expr: |
+            histogram_quantile(0.95, sum(rate(request_latency_seconds_bucket{route="dashboards"}[1h])) by (le)) > 2
+          labels: { severity: warning, owner: platform }
+        - alert: CRMFreshnessBreach
+          expr: max(northstar_connector_lag_seconds{source=~"salesforce|dynamics365"}) > 900
+          for: 5m
+          labels: { severity: critical, owner: data }
+          annotations:
+            summary: "Connector exceeding 15m freshness target (§14.3)"
+    - name: ai-cost-and-credentials
+      rules:
+        - alert: AICredentialResolutionFailure
+          expr: increase(apisix_secret_resolution_failures_total[5m]) > 0
+          labels: { severity: critical, owner: platform }
+          annotations:
+            summary: "Vault secret resolution failed — fail-closed engaged, run runbook secret-resolution-failure"
+            runbook: docs/runbooks/secret-resolution-failure.md
+        - alert: TenantTokenBudgetNearExhaustion
+          expr: northstar_tenant_budget_remaining_tokens / northstar_tenant_budget_token_limit < 0.1
+          for: 15m
+          labels: { severity: warning, owner: platform }
+        - alert: AICostAnomaly
+          expr: |
+            avg_over_time(northstar_tokens_per_request[15m])
+              > 5 * avg_over_time(northstar_tokens_per_request[7d])
+          labels: { severity: warning, owner: platform }
+          annotations:
+            summary: "Per-request token usage 5x above weekly baseline (T-12 denial-of-wallet)"

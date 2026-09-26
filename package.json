@@ -1,0 +1,18 @@
+{
+  "name": "northstar",
+  "private": true,
+  "packageManager": "pnpm@9.15.0",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "build": "turbo run build",
+    "check": "turbo run check",
+    "test": "turbo run test",
+    "contracts:generate": "openapi-typescript services/bff/openapi/openapi.json -o packages/contracts/src/generated/schema.d.ts",
+    "contracts:check": "openapi-typescript services/bff/openapi/openapi.json -o packages/contracts/src/generated/schema.d.ts && git diff --exit-code -- packages/contracts/src/generated/schema.d.ts"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.5.0",
+    "turbo": "^2.3.3",
+    "typescript": "5.6.3"
+  }
+}

@@ -1,0 +1,55 @@
+# Domain-specific sales playbooks (Phase 3, §24.4).
+# Versioned, governed content: every play cites its methodology and evidence basis.
+# The selection engine (services/orchestrator/orchestrator/playbooks.py) matches
+# deal attributes to plays; nothing here is executed autonomously (§8.7 posture).
+
+catalog_version: 1
+
+plays:
+  - play_id: renewal_risk_early_warning
+    name: Renewal risk early warning
+    methodology: MEDDPICC-derived
+    version: 2
+    match:
+      signals: [inactivity, close_date_push, competitor_mention]
+      stages: [late]
+      min_signals: 2
+    recommendation: "Schedule an executive alignment call; refresh the success plan; quantify realized value to date."
+    evidence_basis: "§8.2 stale-deal and push indicators; renewal cohort analysis (informational until experiment-backed)"
+    owner: sales_ops
+
+  - play_id: competitor_displacement
+    name: Competitor displacement
+    methodology: Challenger
+    version: 1
+    match:
+      signals: [competitor_mention, pricing_pressure]
+      stages: [middle, late]
+      min_signals: 1
+    recommendation: "Build the migration-cost teardown; anchor on switching risk; bring the partner for proof-of-delivery."
+    evidence_basis: "§8.4 competitor signal taxonomy"
+    owner: domain_lead
+
+  - play_id: whitespace_expansion
+    name: Whitespace expansion
+    methodology: Account-based selling
+    version: 1
+    match:
+      signals: [dormant_account, executive_change]
+      stages: [early]
+      min_signals: 1
+    recommendation: "Map the new stakeholder map; open a discovery conversation on the dormant business unit."
+    evidence_basis: "territory.py whitespace detection; §8.4 leadership signal"
+    owner: domain_lead
+
+  - play_id: multi_thread_late_stage
+    name: Multi-thread a late-stage deal
+    methodology: MEDDPICC-derived
+    version: 3
+    match:
+      signals: [missing_stakeholder]
+      stages: [middle, late]
+      min_signals: 1
+    recommendation: "Identify the economic buyer and champion separately; secure a written next step with each."
+    evidence_basis: "§8.2 missing-stakeholder indicator"
+    owner: sales_ops

@@ -1,0 +1,23 @@
+{
+  "id": "chatcmpl-tool1",
+  "object": "chat.completion",
+  "model": "approved-openai-model",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": null,
+        "tool_calls": [
+          {
+            "id": "call_001",
+            "type": "function",
+            "function": {"name": "query_pipeline", "arguments": "{\"metric\":\"coverage\"}"}
+          }
+        ]
+      },
+      "finish_reason": "tool_calls"
+    }
+  ],
+  "usage": {"prompt_tokens": 190, "completion_tokens": 32, "total_tokens": 222}
+}

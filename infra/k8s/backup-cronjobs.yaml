@@ -1,0 +1,91 @@
+# Backup automation backing the DR objectives (RPO 5m / RTO 1h — §22 hardening).
+# Restore drills: docs/runbooks/dr-recovery.md
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postgres-wal-archive-check
+  namespace: northstar
+  annotations:
+    northstar/runbook: docs/runbooks/dr-recovery.md
+spec:
+  schedule: "*/5 * * * *"          # WAL archiving is continuous; this verifies the 5m RPO
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: wal-verify
+              image: ghcr.io/northstar/ops-toolbox:0.1  # pinned digest in production
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  set -eu
+                  LAG=$(psql -tAc "SELECT extract(epoch from now() - max(archived_at)) FROM wal_archive_status")
+                  echo "wal archive lag: ${LAG}s"
+                  test "$(echo "$LAG < 300" | bc)" = "1" || {
+                    echo "RPO BREACH: WAL archive lag exceeds 300s"; exit 1; }
+              envFrom:
+                - secretRef: { name: postgres-backup-readonly }   # Vault-injected, read-only role
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: vault-snapshot
+  namespace: northstar
+spec:
+  schedule: "0 */1 * * *"          # hourly Vault snapshots; raft auto-snapshot disabled (manual drill path)
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          serviceAccountName: vault-operator
+          containers:
+            - name: snapshot
+              image: hashicorp/vault:1.17
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  set -eu
+                  STAMP=$(date -u +%Y%m%dT%H%M%SZ)
+                  vault operator raft snapshot save /backups/vault-${STAMP}.snap
+                  aws s3 cp /backups/vault-${STAMP}.snap s3://${BACKUP_BUCKET}/vault/ \
+                    --endpoint-url ${BACKUP_ENDPOINT}   # enterprise object store; encrypted
+              envFrom:
+                - secretRef: { name: vault-snapshot-creds }
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: etcd-backup
+  namespace: northstar
+  annotations:
+    northstar/runbook: docs/runbooks/apisix-route-rollback.md
+spec:
+  schedule: "*/30 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: etcd-snapshot
+              image: gcr.io/etcd-development/etcd:v3.5.17
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  set -eu
+                  STAMP=$(date -u +%Y%m%dT%H%M%SZ)
+                  ETCDCTL_API=3 etcdctl snapshot save /backup/etcd-${STAMP}.db \
+                    --endpoints=https://etcd:2379 \
+                    --cacert=/etcd/certs/ca.crt --cert=/etcd/certs/tls.crt --key=/etcd/certs/tls.key
+                  ETCDCTL_API=3 etcdctl snapshot status /backup/etcd-${STAMP}.db --write-out=json
+              volumeMounts:
+                - { name: etcd-certs, mountPath: /etcd/certs }
+                - { name: backup, mountPath: /backup }
+          volumes:
+            - name: etcd-certs
+              secret: { secretName: etcd-client-tls }
+            - name: backup
+              emptyDir: {}

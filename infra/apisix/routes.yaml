@@ -1,0 +1,87 @@
+# Apache APISIX declarative routes (PRD §15.2-15.4; ADR-021/022/023).
+# Consumed by the APISIX config controller (GitOps). Environment-specific model
+# ids, secret paths, quotas and timeouts are configuration data supplied per env.
+#
+# Plugin chain order follows §15.3: correlation → authn → tenant → size/method
+# → header allow-list/strip → model authz → limits → ai-proxy → response limits → telemetry.
+
+version: 1
+routes:
+  - name: openai-chat-completions
+    uri: /ai/openai/v1/chat/completions
+    methods: [POST]
+    plugins:
+      correlation-id: {}
+      openid-connect:
+        bearer_only: true
+        discovery: $ENV://OIDC_DISCOVERY
+        client_id: $ENV://APISIX_CLIENT_ID
+        client_secret: $SECRET://vault/1/platform/oidc-client-secret
+      request-size-limiting:
+        max_size: 5242880  # 5 MiB
+      proxy-rewrite:
+        headers:
+          remove: [cookie, x-api-key, x-internal-token]  # Authorization stripped; BYOK injected below (§15.3)
+      ai-proxy:
+        provider: openai
+        auth:
+          header:
+            Authorization: "Bearer $SECRET://vault/1/byok/${TENANT}/openai-primary"
+        model: ${OPENAI_APPROVED_MODEL}
+        override:
+          max_completion_tokens: 4096        # server-side output ceiling (§15.5)
+        timeout_ms: 60000
+        max_stream_duration_ms: 300000
+        max_response_bytes: 10485760
+        logging:
+          summaries: true
+          payloads: false                    # payload logging off by default (§21)
+
+  - name: anthropic-messages
+    uri: /ai/anthropic/v1/messages          # must end in /v1/messages for native pass-through (§15.5)
+    methods: [POST]
+    plugins:
+      correlation-id: {}
+      openid-connect:
+        bearer_only: true
+        discovery: $ENV://OIDC_DISCOVERY
+        client_id: $ENV://APISIX_CLIENT_ID
+        client_secret: $SECRET://vault/1/platform/oidc-client-secret
+      request-size-limiting:
+        max_size: 5242880
+      proxy-rewrite:
+        headers:
+          remove: [cookie, authorization, x-internal-token]  # x-api-key stripped; BYOK injected below
+      ai-proxy:
+        provider: anthropic
+        auth:
+          header:
+            x-api-key: "$SECRET://vault/1/byok/${TENANT}/anthropic-primary"
+        model: ${ANTHROPIC_APPROVED_MODEL}
+        anthropic_version: "2023-06-01"      # approved version pinned (§15.5)
+        override:
+          max_tokens: 4096
+        timeout_ms: 60000
+        max_stream_duration_ms: 300000
+        max_response_bytes: 10485760
+        conversion: disabled                 # ADR-024: opt-in only, named policy required
+        logging:
+          summaries: true
+          payloads: false
+
+  - name: product-api
+    uri: /api/v1/*                          # ADR-028
+    methods: [GET, POST, PATCH, DELETE]
+    upstream: mobile-bff
+    plugins:
+      correlation-id: {}
+      openid-connect:
+        bearer_only: true
+        discovery: $ENV://OIDC_DISCOVERY
+        client_id: $ENV://APISIX_MOBILE_CLIENT_ID
+      limit-request:
+        count: 600
+        time_window: 60
+      proxy-rewrite:
+        headers:
+          remove: [cookie, x-internal-token]

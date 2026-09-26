@@ -1,0 +1,644 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Sales Northstar Product API",
+    "version": "1.0.0",
+    "description": "Mobile BFF API. All product APIs versioned under /api/v1 (ADR-028). Typed error envelope before streaming starts (PRD §17.8)."
+  },
+  "servers": [{ "url": "/" }],
+  "paths": {
+    "/api/v1/conversations": {
+      "post": {
+        "operationId": "createConversation",
+        "summary": "Start a permission-aware session",
+        "responses": {
+          "201": {
+            "description": "Conversation created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Conversation" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/ApiError" },
+          "403": { "$ref": "#/components/responses/ApiError" }
+        }
+      }
+    },
+    "/api/v1/conversations/{conversationId}/messages": {
+      "post": {
+        "operationId": "postMessage",
+        "summary": "Submit text and receive streamed components",
+        "parameters": [
+          { "name": "conversationId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/MessageRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Streamed typed components (text/event-stream) or JSON response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ConversationResponse" }
+              },
+              "text/event-stream": {
+                "schema": { "type": "string" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/ApiError" },
+          "422": { "$ref": "#/components/responses/ApiError" },
+          "503": { "$ref": "#/components/responses/ApiError" }
+        }
+      }
+    },
+    "/api/v1/conversations/{conversationId}/voice-transcript": {
+      "post": {
+        "operationId": "voiceTranscript",
+        "summary": "Speech-to-text preview requiring user confirmation (ADR-032; disabled pending governance approval)",
+        "parameters": [
+          { "name": "conversationId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["audioRef"],
+                "properties": {
+                  "audioRef": { "type": "string", "minLength": 1 },
+                  "language": { "type": "string" }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Transcript preview; user confirms before submission (§10.2)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["transcript", "confirmed", "notice"],
+                  "properties": {
+                    "transcript": { "type": "string" },
+                    "confirmed": { "type": "boolean", "enum": [false] },
+                    "notice": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/ApiError" },
+          "401": { "$ref": "#/components/responses/ApiError" }
+        }
+      }
+    },
+    "/api/v1/me/context": {
+      "get": {
+        "operationId": "getMyContext",
+        "summary": "Role, team, domain, groups, preferences, allowed scopes",
+        "responses": {
+          "200": {
+            "description": "User context",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UserContext" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/ApiError" }
+        }
+      }
+    },
+    "/api/v1/pipeline": {
+      "get": {
+        "operationId": "queryPipeline",
+        "summary": "Query governed pipeline metrics and dimensions",
+        "parameters": [
+          { "name": "period", "in": "query", "schema": { "type": "string" } },
+          { "name": "asOf", "in": "query", "schema": { "type": "string", "format": "date-time" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pipeline metrics",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MetricRows" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/ApiError" }
+        }
+      }
+    },
+    "/api/v1/targets/attainment": {
+      "get": {
+        "operationId": "queryAttainment",
+        "summary": "Target, actual, forecast, and gap",
+        "parameters": [
+          { "name": "assigneeId", "in": "query", "required": true, "schema": { "type": "string" } },
+          { "name": "period", "in": "query", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Attainment report",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MetricRows" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/ApiError" }
+        }
+      }
+    },
+    "/api/v1/metrics/{metricId}/lineage": {
+      "get": {
+        "operationId": "metricLineage",
+        "summary": "Formula, owner, version, sources, quality",
+        "parameters": [
+          { "name": "metricId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Metric lineage",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MetricLineage" }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/ApiError" }
+        }
+      }
+    },
+    "/api/v1/dashboards/compose": {
+      "post": {
+        "operationId": "composeDashboard",
+        "summary": "Generate a validated dashboard proposal from intent",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ComposeRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Dashboard proposal (unsaved; requires confirmation — Scenario D)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DashboardDefinition" }
+              }
+            }
+          },
+          "422": { "$ref": "#/components/responses/ApiError" }
+        }
+      }
+    },
+    "/api/v1/dashboards": {
+      "post": {
+        "operationId": "saveDashboard",
+        "summary": "Save a declarative dashboard definition",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/DashboardDefinition" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Saved",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DashboardDefinition" }
+              }
+            }
+          },
+          "422": { "$ref": "#/components/responses/ApiError" }
+        }
+      }
+    },
+    "/api/v1/alerts": {
+      "post": {
+        "operationId": "createAlert",
+        "summary": "Create a governed alert rule",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AlertRule" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AlertRule" }
+              }
+            }
+          },
+          "422": { "$ref": "#/components/responses/ApiError" }
+        }
+      }
+    },
+    "/api/v1/actions/preview": {
+      "post": {
+        "operationId": "previewAction",
+        "summary": "Preview a proposed action and approvals",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ActionRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Preview with old/new values and impact (Scenario E)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ActionPreview" }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/ApiError" }
+        }
+      }
+    },
+    "/api/v1/actions/{actionId}/confirm": {
+      "post": {
+        "operationId": "confirmAction",
+        "summary": "Execute an authorized confirmed action (idempotent by actionId)",
+        "parameters": [
+          { "name": "actionId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Action receipt",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ActionReceipt" }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/ApiError" },
+          "409": { "$ref": "#/components/responses/ApiError" }
+        }
+      }
+    },
+    "/api/v1/feedback": {
+      "post": {
+        "operationId": "recordFeedback",
+        "summary": "Record response or recommendation feedback (CONV-09)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Feedback" }
+            }
+          }
+        },
+        "responses": {
+          "202": { "description": "Recorded" }
+        }
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "ApiError": {
+        "description": "Typed error envelope (PRD §17.8)",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ApiError" }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "ApiError": {
+        "type": "object",
+        "required": ["code", "message", "correlationId", "retryable"],
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": ["UNAUTHENTICATED", "FORBIDDEN", "VALIDATION_FAILED", "AI_CREDENTIAL_UNAVAILABLE",
+                     "AI_RATE_LIMITED", "AI_PROTOCOL_FEATURE_UNSUPPORTED", "DEPENDENCY_UNAVAILABLE", "INTERNAL_ERROR"]
+          },
+          "message": { "type": "string" },
+          "correlationId": { "type": "string" },
+          "retryable": { "type": "boolean" },
+          "retryAfterSeconds": { "type": "integer" },
+          "fieldErrors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": { "field": { "type": "string" }, "message": { "type": "string" } }
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "Conversation": {
+        "type": "object",
+        "required": ["conversationId", "scopeType", "scopeId"],
+        "properties": {
+          "conversationId": { "type": "string" },
+          "scopeType": { "type": "string" },
+          "scopeId": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "MessageRequest": {
+        "type": "object",
+        "required": ["text"],
+        "properties": {
+          "text": { "type": "string", "minLength": 1 },
+          "clientMessageId": { "type": "string" }
+        },
+        "additionalProperties": false
+      },
+      "ConversationResponse": {
+        "type": "object",
+        "required": ["messageId", "answer", "scope", "components", "evidence", "warnings", "suggestedActions"],
+        "properties": {
+          "messageId": { "type": "string" },
+          "answer": { "type": "string" },
+          "scope": {
+            "type": "object",
+            "required": ["type", "id", "asOf"],
+            "properties": {
+              "type": { "type": "string" },
+              "id": { "type": "string" },
+              "asOf": { "type": "string", "format": "date-time" }
+            }
+          },
+          "components": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Component" }
+          },
+          "evidence": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/EvidenceRef" }
+          },
+          "warnings": { "type": "array", "items": { "type": "string" } },
+          "suggestedActions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "action": { "type": "string" },
+                "requiresConfirmation": { "type": "boolean" }
+              }
+            }
+          }
+        }
+      },
+      "Component": {
+        "type": "object",
+        "required": ["type"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["narrative", "kpi", "kpi_table", "chart", "table", "evidence_chips"]
+          },
+          "title": { "type": "string" },
+          "payload": { "type": "object" },
+          "datasetRef": { "type": "string" },
+          "metricDefinitionId": { "type": "string" }
+        },
+        "additionalProperties": false
+      },
+      "EvidenceRef": {
+        "type": "object",
+        "required": ["type", "ref", "label"],
+        "properties": {
+          "type": { "type": "string", "enum": ["crm_record", "plan_row", "news_item", "metric_definition"] },
+          "ref": { "type": "string" },
+          "label": { "type": "string" }
+        }
+      },
+      "UserContext": {
+        "type": "object",
+        "required": ["userId", "role", "teamIds", "domainIds", "groupIds", "preferences"],
+        "properties": {
+          "userId": { "type": "string" },
+          "role": { "type": "string" },
+          "teamIds": { "type": "array", "items": { "type": "string" } },
+          "domainIds": { "type": "array", "items": { "type": "string" } },
+          "groupIds": { "type": "array", "items": { "type": "string" } },
+          "preferences": {
+            "type": "object",
+            "properties": {
+              "currency": { "type": "string" },
+              "locale": { "type": "string" }
+            }
+          },
+          "allowedScopes": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "MetricRows": {
+        "type": "object",
+        "required": ["metrics"],
+        "properties": {
+          "metrics": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/MetricResult" }
+          }
+        }
+      },
+      "MetricResult": {
+        "type": "object",
+        "required": ["metricId", "version", "scope", "asOf", "reconciliationStatus"],
+        "properties": {
+          "metricId": { "type": "string" },
+          "version": { "type": "integer" },
+          "value": { "type": ["number", "null"] },
+          "suppressedReason": { "type": ["string", "null"] },
+          "scope": { "type": "string" },
+          "asOf": { "type": "string" },
+          "currency": { "type": "string" },
+          "reconciliationStatus": { "type": "string" }
+        }
+      },
+      "MetricLineage": {
+        "type": "object",
+        "required": ["metricId", "version", "name", "formula", "grain", "certification"],
+        "properties": {
+          "metricId": { "type": "string" },
+          "version": { "type": "integer" },
+          "name": { "type": "string" },
+          "formula": { "type": "string" },
+          "grain": { "type": "string" },
+          "owner": { "type": "string" },
+          "certification": { "type": "string" }
+        }
+      },
+      "ComposeRequest": {
+        "type": "object",
+        "required": ["intent"],
+        "properties": {
+          "intent": { "type": "string" },
+          "context": { "type": "object" }
+        },
+        "additionalProperties": false
+      },
+      "DashboardDefinition": {
+        "type": "object",
+        "required": ["title", "scope", "layout", "cards"],
+        "properties": {
+          "dashboardId": { "type": "string" },
+          "title": { "type": "string" },
+          "scope": {
+            "type": "object",
+            "required": ["type", "id"],
+            "properties": {
+              "type": { "type": "string", "enum": ["seller", "team", "domain", "group"] },
+              "id": { "type": "string" }
+            }
+          },
+          "globalFilters": { "type": "object" },
+          "layout": {
+            "type": "object",
+            "required": ["mode", "columns"],
+            "properties": {
+              "mode": { "type": "string", "enum": ["mobile_grid", "tablet_grid"] },
+              "columns": { "type": "integer", "minimum": 1, "maximum": 4 }
+            }
+          },
+          "cards": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "$ref": "#/components/schemas/DashboardCard" }
+          },
+          "refreshPolicy": { "type": "string", "enum": ["on_open", "scheduled"] },
+          "sharing": { "type": "string" }
+        }
+      },
+      "DashboardCard": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": ["kind", "id", "title", "metric"],
+            "properties": {
+              "kind": { "const": "kpi" },
+              "id": { "type": "string" },
+              "title": { "type": "string" },
+              "metric": { "type": "string" },
+              "position": { "type": "array", "items": { "type": "integer" } }
+            }
+          },
+          {
+            "type": "object",
+            "required": ["kind", "id", "title", "metric", "dimension"],
+            "properties": {
+              "kind": { "const": "bar" },
+              "id": { "type": "string" },
+              "title": { "type": "string" },
+              "metric": { "type": "string" },
+              "dimension": { "type": "string" },
+              "position": { "type": "array", "items": { "type": "integer" } }
+            }
+          },
+          {
+            "type": "object",
+            "required": ["kind", "id", "title", "query"],
+            "properties": {
+              "kind": { "const": "table" },
+              "id": { "type": "string" },
+              "title": { "type": "string" },
+              "query": { "type": "string" },
+              "position": { "type": "array", "items": { "type": "integer" } }
+            }
+          }
+        ]
+      },
+      "AlertRule": {
+        "type": "object",
+        "required": ["metricId", "predicate", "channel"],
+        "properties": {
+          "ruleId": { "type": "string" },
+          "metricId": { "type": "string" },
+          "predicate": { "type": "object" },
+          "schedule": { "type": "object" },
+          "channel": { "type": "string", "enum": ["in_app", "push", "email"] },
+          "status": { "type": "string", "enum": ["active", "paused"] }
+        }
+      },
+      "ActionRequest": {
+        "type": "object",
+        "required": ["actionType", "targetId"],
+        "properties": {
+          "actionType": {
+            "type": "string",
+            "enum": ["create_task", "update_close_date", "update_next_step", "add_note"]
+          },
+          "targetId": { "type": "string" },
+          "payload": { "type": "object" }
+        },
+        "additionalProperties": false
+      },
+      "ActionPreview": {
+        "type": "object",
+        "required": ["actionId", "actionType", "changes", "requiresConfirmation"],
+        "properties": {
+          "actionId": { "type": "string" },
+          "actionType": { "type": "string" },
+          "changes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["field", "oldValue", "newValue"],
+              "properties": {
+                "field": { "type": "string" },
+                "oldValue": {},
+                "newValue": {},
+                "impact": { "type": "string" }
+              }
+            }
+          },
+          "requiresConfirmation": { "type": "boolean" },
+          "stepUpAuthRequired": { "type": "boolean" }
+        }
+      },
+      "ActionReceipt": {
+        "type": "object",
+        "required": ["actionId", "status", "idempotentReplay"],
+        "properties": {
+          "actionId": { "type": "string" },
+          "status": { "type": "string", "enum": ["executed", "already_executed"] },
+          "idempotentReplay": { "type": "boolean" },
+          "externalRef": { "type": "string" },
+          "executedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Feedback": {
+        "type": "object",
+        "required": ["messageId", "rating"],
+        "properties": {
+          "messageId": { "type": "string" },
+          "rating": { "type": "string", "enum": ["up", "down"] },
+          "correction": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "id": "chatcmpl-abc123",
+  "object": "chat.completion",
+  "created": 1795392000,
+  "model": "approved-openai-model",
+  "choices": [
+    {
+      "index": 0,
+      "message": {"role": "assistant", "content": "Your commit forecast decreased because two opportunities moved to next quarter."},
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {"prompt_tokens": 210, "completion_tokens": 48, "total_tokens": 258}
+}

@@ -1,0 +1,9 @@
+# Deterministic toolchain versions (PRD §17.9; Bootstrap item "pin the deterministic developer toolchain")
+[tools]
+node = "22.22.1"
+python = "3.12.8"   # services pin 3.12 for library compatibility; system python 3.14 also works for tooling
+# pnpm is pinned via package.json "packageManager" (corepack)
+# uv: install via https://docs.astral.sh/uv/ ; version pinned in uv.lock
+
+[env]
+_.file = ".env.local"

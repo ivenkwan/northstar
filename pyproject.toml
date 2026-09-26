@@ -1,0 +1,50 @@
+[project]
+name = "northstar-workspace"
+version = "0.1.0"
+description = "Sales Northstar Python service workspace (uv)"
+requires-python = ">=3.12"
+dependencies = [
+  "northstar-alerts",
+  "northstar-bff",
+  "northstar-byok",
+  "northstar-connectors",
+  "northstar-knowledge-graph",
+  "northstar-metrics",
+  "northstar-orchestrator",
+]
+
+[tool.uv.sources]
+northstar-alerts = { workspace = true }
+northstar-bff = { workspace = true }
+northstar-byok = { workspace = true }
+northstar-connectors = { workspace = true }
+northstar-knowledge-graph = { workspace = true }
+northstar-metrics = { workspace = true }
+northstar-orchestrator = { workspace = true }
+
+[tool.uv.workspace]
+members = ["services/*", "tests/golden"]
+
+[dependency-groups]
+dev = [
+  "pytest>=8.3",
+  "pytest-asyncio>=0.24",
+  "httpx>=0.27",
+  "ruff>=0.8",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["services", "tests"]
+pythonpath = ["tests/golden", "tests/evals"]
+
+[tool.ruff]
+line-length = 140
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = [
+  "B008",   # FastAPI Header()/Depends() in defaults is the framework pattern
+  "UP042",  # StrEnum migration; enum.StrEnum is fine but not worth churn mid-phase
+]

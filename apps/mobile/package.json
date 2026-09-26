@@ -1,0 +1,21 @@
+{
+  "name": "@northstar/mobile",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": {
+    "check": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@northstar/validation": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "5.6.3",
+    "vitest": "^2.1.8"
+  },
+  "notes": {
+    "runtime": "React Native 0.87+ Strict TypeScript shell initializes with the native toolchain (Phase 1 Sprint 1); this domain layer is deliberately runtime-independent so it typechecks and tests without a device build."
+  }
+}

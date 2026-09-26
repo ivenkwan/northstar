@@ -1,0 +1,12 @@
+{
+  "id": "msg_tool_01",
+  "type": "message",
+  "role": "assistant",
+  "model": "approved-anthropic-model",
+  "content": [
+    {"type": "text", "text": "Checking coverage for Q4."},
+    {"type": "tool_use", "id": "toolu_01", "name": "query_pipeline", "input": {"metric": "coverage"}}
+  ],
+  "stop_reason": "tool_use",
+  "usage": {"input_tokens": 88, "output_tokens": 41}
+}

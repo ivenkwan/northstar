@@ -1,0 +1,41 @@
+# Service level objectives (PRD §22 production targets) with burn-rate alerting.
+# Consumed by the observability stack; PrometheusRule equivalents in prometheus-rules.yaml.
+
+slos:
+  - name: user-api-availability
+    target: 99.9            # monthly, after hardening
+    indicator: ratio of 5xx-free requests on /api/v1/*
+    windows:
+      fast_burn: { window: 1h, error_budget_consumption: 14.4 }   # 2% budget in 1h → page
+      slow_burn: { window: 6h, error_budget_consumption: 5.0 }     # sustained → ticket
+
+  - name: conversational-latency
+    target: p95 < 5s        # cached/common queries after hardening
+    indicator: histogram of /api/v1/conversations/{id}/messages first-component latency
+    windows:
+      fast_burn: { window: 30m, p95_violation_ratio: 0.2 }
+
+  - name: dashboard-latency
+    target: p95 < 2s
+    indicator: histogram of /api/v1/dashboards render fetch latency
+    windows:
+      slow_burn: { window: 1h, p95_violation_ratio: 0.1 }
+
+  - name: gateway-stream-success
+    target: 99.5           # SSE streams completing without gateway error
+    indicator: ratio of streams ending in protocol terminator ([DONE] / message_stop)
+    excludes: [client_disconnects]   # client cancels are not SLO failures (GW-03 cleanup check)
+
+  - name: crm-freshness
+    target: 100% of events landed within 15m of source change (§14.3)
+    indicator: max(event_land_time - source_change_time) per connector
+    windows:
+      fast_burn: { window: 15m, breach_count: 1 }
+
+  - name: credential-availability
+    target: 99.9           # BYOK routes resolving secrets successfully (ADR-023 probes)
+    indicator: ratio of synthetic probe successes per credential binding
+
+dr_objectives:             # §22 hardening targets; drills per docs/runbooks/dr-recovery.md
+  rpo: 5m
+  rto: 1h
