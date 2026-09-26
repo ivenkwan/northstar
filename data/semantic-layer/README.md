@@ -12,11 +12,15 @@ Formula, grain, dimensions, fiscal calendar, currency treatment, stage mapping, 
 
 ## Open item
 
-FX rate reference dataset and as-of policy (review finding F-08).
+FX rate reference dataset and as-of policy (review finding F-08) — `fx_rate` table added to the canonical model; provider selection still open (questionnaire Q3.2).
 
 ## Build track
 
 Phase 0 (certified metric validation) → Phase 1, Track C — see `todo.md`.
+
+## Phase 0 artifact
+
+- [`metric-catalog.yaml`](metric-catalog.yaml) — draft v0.1: all §8.3 measures + pipeline-health indicators with formulas, grain, guards, dependencies; certification pending metric-owner sign-off.
 
 ## AI-assisted development
 

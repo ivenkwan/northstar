@@ -7,7 +7,7 @@ All build activities, organized by delivery phase (PRD Part III). This is the wo
 | Phase | Scope | Duration | Status |
 |---|---|---|---|
 | Bootstrap | Repository setup | 1 day | ✅ Complete |
-| Phase 0 | Discovery and control design | 2 weeks | Not started |
+| Phase 0 | Discovery and control design | 2 weeks | 🟡 Artifacts built — enterprise inputs pending |
 | Phase 1 | MVP | 10–14 weeks (6 sprints) | Not started |
 | Phase 2 | Production hardening | 8–12 weeks | Not started |
 | Phase 3 | Optimization | Ongoing | Not started |
@@ -43,35 +43,40 @@ All build activities, organized by delivery phase (PRD Part III). This is the wo
 
 ---
 
-## Phase 0 — Discovery and control design (2 weeks, PRD §24.1)
+## Phase 0 — Discovery and control design (2 weeks, PRD §24.1) — artifacts built 2026-09-26; enterprise inputs pending
 
 ### Discovery
 
-- [ ] Confirm CRM, target-planning, activity, news, identity, mobile-device, and deployment landscape.
-- [ ] Validate hierarchy, domain–group allocation, fiscal calendar, currencies, and certified metric definitions (§6, §8.3).
-- [ ] Select two pilot teams and define baseline measurements (§32 controlled-pilot design).
-- [ ] Complete data protection impact assessment and AI risk assessment (§11.3).
-- [ ] Produce UX prototype (five-destination IA, §10.1), canonical schema draft (§14.1 → `data/canonical-model`), connector plan, threat model, and acceptance suite (§28).
+- [x] Confirm CRM, target-planning, activity, news, identity, mobile-device, and deployment landscape → instrument ready: `docs/discovery/landscape-questionnaire.md`; **[INPUT REQUIRED]** answers from enterprise stakeholders; assumptions A-1–A-7 registered in `docs/discovery/README.md`.
+- [x] Validate hierarchy, domain–group allocation, fiscal calendar, currencies, and certified metric definitions (§6, §8.3) → validation checklist in questionnaire Q3/Q4; metric catalog draft `data/semantic-layer/metric-catalog.yaml` (owners/certification **[INPUT REQUIRED]**).
+- [x] Select two pilot teams and define baseline measurements (§32) → selection criteria, matched controls, baseline metrics, thresholds: `docs/discovery/pilot-baseline-plan.md`; **[INPUT REQUIRED]** team nomination by sales ops.
+- [x] Complete data protection impact assessment and AI risk assessment (§11.3) → drafts `docs/governance/dpia.md` + `docs/governance/ai-risk-assessment.md`; **[INPUT REQUIRED]** DPO/forum approval.
+- [x] Produce UX prototype (five-destination IA, §10.1), canonical schema draft (§14.1), connector plan, threat model, and acceptance suite (§28) → `docs/discovery/ux-ia-blueprint.md` (wireframe-level; high-fidelity needs designer), `data/canonical-model/schema.sql` v0.1, `docs/discovery/connector-plan.md`, `docs/security/threat-model.md`, `tests/golden/acceptance-suite.md`.
 
 ### Open decisions to close (from PRD review §4)
 
-- [ ] Resolve API path convention: `/api/v2/*` (§15.2) vs `/v1/...` (§19.2) — **before any OpenAPI document is authored** (F-01).
-- [ ] Select graph store engine (F-07) → new ADR-028+.
-- [ ] Select warehouse/lakehouse engine (F-07) → new ADR.
-- [ ] Select CDC/ingestion tooling for connectors (F-07).
-- [ ] Decide voice/STT posture: add STT architecture or reclassify CONV-01 voice as "Should" (F-03).
-- [ ] Define the tenant model for a single-enterprise deployment (F-05).
-- [ ] Select notification service for in-app push + email alerts (§8.6); confirm Teams is Phase 2 (F-06).
-- [ ] Select IaC platform and Kubernetes distribution/environment topology (§15.1).
-- [ ] Select mobile chart/rendering library satisfying WCAG 2.2 AA table alternatives (§8.5, §22).
-- [ ] Confirm Phase 1 sprint plan across all tracks A–H against the 12–16 week window; agree de-scope order (F-10, review §5).
+- [x] Resolve API path convention (F-01) → **ADR-028**: `/api/v1/*`; PRD amended to v3.2 (§15.2, §16.5, §19.2).
+- [x] Select graph store engine (F-07) → **ADR-029**: Apache AGE on PostgreSQL, Neo4j fallback trigger at Phase 2.
+- [x] Select warehouse/lakehouse engine (F-07) → **ADR-030**: PostgreSQL + dbt; lakehouse deferred with explicit triggers.
+- [x] Select CDC/ingestion tooling (F-07) → **ADR-031**: native change-capture clients (Salesforce Pub/Sub, Dynamics change tracking) on Temporal.
+- [x] Decide voice/STT posture (F-03) → **ADR-032**: text-first MVP; voice reclassified Should/Phase 2; CONV-01 amended in PRD v3.2.
+- [x] Define the tenant model (F-05) → **ADR-033**: single-tenant deployment; `tenantId` = enterprise instance; environments are isolation boundaries.
+- [x] Select notification service (F-06) → **ADR-034**: in-app + FCM/APNs (metadata-only) + enterprise SMTP; Teams confirmed Phase 2.
+- [x] Select IaC platform and Kubernetes distribution → **ADR-035**: Terraform; RKE2 production, kind local; Argo CD GitOps.
+- [x] Select mobile chart library (WCAG 2.2 AA) → **ADR-036**: Victory Native XL; table alternative mandatory per widget.
+- [x] Confirm Phase 1 sprint plan vs window (F-02/F-10) → `docs/discovery/phase-1-plan-validation.md`: 14-week plan, capacity model, critical path, de-scope levers; **[INPUT REQUIRED]** governance acceptance + lever pre-authorization.
+
+All nine decisions recorded as ADRs (status Proposed); board acceptance pending below.
 
 ### Governance
 
-- [ ] Architecture review board approves ADR-021–027 (move status Proposed → Accepted).
+- [ ] Architecture review board approves ADR-021–036, AGENTS.md, ZCode provider/data policy, and plugin trust boundary (§24.1) → agenda + evidence pack ready: `docs/governance/adr-review-package.md`.
 - [ ] Stand up AI/data governance forum and product council (§26).
+- [ ] DPO approves DPIA; governance forum accepts AI risk assessment (`docs/governance/README.md`).
 
 **Exit:** discovery artifacts approved; open decisions closed and recorded as ADRs where architectural; pilot baselines captured.
+
+**Phase 0 status:** all repository-buildable artifacts delivered (2026-09-26). Remaining exit criteria are enterprise/human inputs: questionnaire answers, pilot team nomination, metric-owner certification, and the three governance approvals. **[INPUT REQUIRED]**
 
 ---
 
@@ -198,6 +203,7 @@ Sprints are two weeks. Tracks A and B follow the PRD §24.2 sprint table verbati
 
 ## Change log
 
+- **2026-09-26:** Built Phase 0 artifacts: discovery instruments (questionnaire, pilot plan, connector plan, UX blueprint, Phase 1 plan validation), canonical schema v0.1, metric catalog v0.1, threat model, DPIA + AI risk assessment, acceptance-suite spec, and ADR-028–036 closing all nine open decisions; PRD amended to v3.2 (F-01 `/api/v1`, F-03 voice deferral).
 - **2026-09-26:** Replaced OpenCode recommendation with governed ZCode toolchain; added ADR-027, root instructions, toolchain guide, reviewed plugin, and PRD §17.9/§23.5 controls.
 
 | Date | Change |

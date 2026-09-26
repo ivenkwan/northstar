@@ -1,0 +1,129 @@
+# Sales Northstar — governed metric catalog draft v0.1 (Phase 0)
+# Source of truth for certified measure definitions (PRD §8.3, §14.2).
+# services/metrics executes these; every analytical response carries metric_id + version (§14.2).
+# Certification status is draft until metric-owner sign-off (questionnaire Q4) — [INPUT REQUIRED].
+
+catalog_version: 0.1
+fiscal_calendar_ref: data/canonical-model (fiscal_calendar; A-2 provisional)
+currency_treatment:
+  base_currencies: [HKD]            # A-3; questionnaire Q3.2
+  conversion: fx_rate table (data/canonical-model), rate as-of the earlier of period-end or query as_of
+  fx_source: "[OPEN] approved FX provider — questionnaire Q3.2 (resolves F-08)"
+  presentation_currency: per user preference (§9.3); default deployment base
+
+dimensions_common: [salesperson, team, domain, group, account, product, geography, stage,
+                    forecast_category, close_month, currency, source_system, fiscal_period]
+
+metrics:
+
+  - metric_id: actual
+    version: 1
+    name: Actual
+    owner: "[INPUT REQUIRED: sales ops]"
+    certification: draft
+    formula: "Σ(recognized measure selected by policy) over period"   # bookings by default (Q4.1)
+    grain: assignee × fiscal_period
+    inclusion: closed-won opportunities with closed_at in period; amount per credit_allocation_pct
+    null_treatment: missing amount excluded and counted in data-quality warnings
+    reconciliation: daily vs CRM closed-won report (connector plan §reconciliation)
+
+  - metric_id: target
+    version: 1
+    name: Target
+    owner: "[INPUT REQUIRED]"
+    certification: draft
+    formula: "target_plan.target_minor where approval_status = approved"
+    grain: assignee × fiscal_period × metric
+    inclusion: latest approved version only
+    null_treatment: no approved plan → target = 0 and attainment suppressed (not shown as 0%)
+
+  - metric_id: attainment_pct
+    version: 3
+    name: Attainment %
+    owner: "[INPUT REQUIRED]"
+    certification: draft
+    formula: "actual / target × 100"
+    grain: assignee × fiscal_period
+    dependencies: [actual, target]
+    guards: target ≤ 0 → null (suppressed); late-arriving actuals per reconciliation status flag
+
+  - metric_id: remaining_target
+    version: 1
+    name: Remaining Target
+    formula: "max(target − actual, 0)"
+    grain: assignee × fiscal_period
+    dependencies: [target, actual]
+
+  - metric_id: weighted_pipeline
+    version: 2
+    name: Weighted Pipeline
+    formula: "Σ(opportunity.amount_minor × probability)"
+    grain: scope × as_of
+    probability_source: "[INPUT REQUIRED] CRM field vs stage_map default (Q4.2)"
+    inclusion: open opportunities in scope; excluded_from_enterprise_total memberships excluded at group+ scope
+    multi_group: apply DomainGroupMembership.pipeline_allocation_pct at group scope (§6.2)
+
+  - metric_id: coverage
+    version: 2
+    name: Coverage
+    formula: "relevant open pipeline / remaining_target"
+    dependencies: [weighted_pipeline, remaining_target]
+    guards: remaining_target = 0 → null; label non-additive across groups
+
+  - metric_id: forecast_gap
+    version: 1
+    name: Forecast Gap
+    formula: "target − (actual + forecast)"        # forecast = commit + best_case·policy weight (Q4.1)
+    grain: assignee × fiscal_period
+    dependencies: [target, actual]
+
+  - metric_id: run_rate
+    version: 1
+    name: Run Rate
+    formula: "actual / elapsed_periods × total_periods"   # working-day variant by policy (§8.3)
+    grain: assignee × fiscal_period × as_of
+
+  - metric_id: required_run_rate
+    version: 1
+    name: Required Run Rate
+    formula: "remaining_target / remaining_working_days × elapsed_working_days_factor"
+    grain: assignee × fiscal_period × as_of
+
+  # §8.2 pipeline health indicators (transparent composition — no opaque ML in v1)
+  - metric_id: stage_conversion
+    version: 1
+    name: Stage Conversion
+    formula: "count advancing stage in period / count entering stage in period"
+    grain: stage × scope × period
+  - metric_id: stage_ageing
+    version: 1
+    name: Stage Ageing
+    formula: "as_of − stage_entered_at (median and p90)"
+    grain: stage × scope
+  - metric_id: stale_opp_rate
+    version: 1
+    name: Stale Opportunity Rate
+    formula: "open opps with no activity ≥ staleness_days / open opps"
+    staleness_days: 21              # configurable; pilot baseline uses same value
+    grain: scope × period
+  - metric_id: close_date_push
+    version: 1
+    name: Close Date Push Count
+    formula: "count of close_date increases on open opps in period"
+    grain: scope × period
+  - metric_id: pipeline_movement
+    version: 1
+    name: Pipeline Movement (waterfall)
+    formula: "Δ new + Δ up + Δ down + Δ closed_won + Δ closed_lost + Δ slipped per period"
+    grain: scope × period            # powers §7.1 variance waterfall
+
+lineage:
+  every_response_includes: [metric_id, metric_version, source_refresh_at, effective_scope,
+                             filters, grain, currency, null_treatment, reconciliation_status]
+  ui_surface: "GET /api/v1/metrics/{id}/lineage (ADR-028)"
+
+open_items:
+  - FX provider and rate policy (F-08, Q3.2)
+  - Probability source (Q4.2)
+  - Forecast = commit + best_case weighting policy (Q4.1)
+  - "Certified baseline: metric owners must sign each certification (draft -> certified)"

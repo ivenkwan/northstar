@@ -2,10 +2,10 @@
 
 ## Product Proposal and Detailed Technical Specification
 
-**Version:** 3.1 (consolidated)
+**Version:** 3.2 (consolidated)
 **Status:** Proposed production baseline
 **Date:** 26 September 2026
-**Supersedes:** Product Proposal v1.0; Technical Architecture and Engineering Specification v2.1; consolidated baseline v3.0
+**Supersedes:** Product Proposal v1.0; Technical Architecture and Engineering Specification v2.1; consolidated baseline v3.0; v3.1 (ZCode toolchain)
 
 This document consolidates the product proposal and the engineering specification for **Sales Northstar** into a single baseline. Part I covers the product: problem, users, organization model, journeys, functional requirements, agent architecture, and governance. Part II covers the technical baseline: data architecture, the Apache APISIX AI gateway, enterprise BYOK, mobile engineering standards, knowledge-graph integration, APIs, testing, and non-functional requirements. Part III covers delivery: plan, team, backlog, acceptance criteria, risks, and commercial framing.
 
@@ -185,7 +185,8 @@ A group dashboard may show a full-view amount for operational visibility, but an
 
 | ID | Requirement | Priority | Acceptance condition |
 |---|---|---:|---|
-| CONV-01 | Accept text and voice input with follow-up context | Must | User can conduct a multi-turn session without repeating scope or date range |
+| CONV-01 | Accept text input with follow-up context | Must | User can conduct a multi-turn session without repeating scope or date range |
+| CONV-01V | Accept voice input with transcript confirmation | Should (Phase 2) | Transcript is shown for correction before submission; audio is processed transiently (ADR-032) |
 | CONV-02 | Resolve business synonyms through a governed glossary | Must | "Bookings," "sales," and local terms map to configured metrics, or the system asks for disambiguation |
 | CONV-03 | Return mixed components: narrative, KPI, chart, graph, table, source chips, and actions | Must | Response payload validates against the UI component schema |
 | CONV-04 | Show query scope, filters, as-of time, currency, and metric definition | Must | Every analytical answer exposes these fields |
@@ -570,7 +571,7 @@ APISIX supports authentication, rate limiting, load balancing, and AI proxying i
 | `/ai/openai/v1/chat/completions` | OpenAI Chat Completions | OpenAI/approved compatible model | OpenAI Chat Completion | OpenAI SSE ending in `[DONE]` | None by default |
 | `/ai/anthropic/v1/messages` | Anthropic Messages | Anthropic | Anthropic Message | Anthropic SSE ending in `message_stop` | None by default |
 | `/internal/ai/capabilities/{capability}` | Internal typed envelope | Policy-selected pool | Internal envelope | Optional | Server-side only |
-| `/api/v2/*` | Sales Northstar OpenAPI | Mobile BFF/services | Sales Northstar DTOs | Selected endpoints | Not applicable |
+| `/api/v1/*` | Sales Northstar OpenAPI | Mobile BFF/services | Sales Northstar DTOs | Selected endpoints | Not applicable |
 
 The native Anthropic route must end in `/v1/messages`; APISIX then forwards the native request without protocol conversion and preserves Anthropic-specific fields. Native streaming returns Anthropic SSE events such as `message_start`, `content_block_delta`, and `message_stop`.[^21]
 
@@ -795,12 +796,12 @@ APISIX documentation states that an unresolved secret reference can remain as a 
 
 | Method and path | Purpose | Authorization |
 |---|---|---|
-| `POST /api/v2/admin/byok/credentials` | Submit and validate a credential | Tenant AI administrator + MFA |
-| `GET /api/v2/admin/byok/credentials` | List redacted metadata | Tenant AI administrator/auditor |
-| `POST /api/v2/admin/byok/credentials/{id}/rotate` | Stage replacement credential | Tenant AI administrator + MFA |
-| `POST /api/v2/admin/byok/credentials/{id}/test` | Execute controlled validation | Tenant AI administrator |
-| `PATCH /api/v2/admin/byok/credentials/{id}/bindings` | Change protocol/model/domain scope | Tenant AI administrator + policy approval |
-| `DELETE /api/v2/admin/byok/credentials/{id}` | Disable, revoke, and schedule metadata retention | Tenant AI administrator + dual approval |
+| `POST /api/v1/admin/byok/credentials` | Submit and validate a credential | Tenant AI administrator + MFA |
+| `GET /api/v1/admin/byok/credentials` | List redacted metadata | Tenant AI administrator/auditor |
+| `POST /api/v1/admin/byok/credentials/{id}/rotate` | Stage replacement credential | Tenant AI administrator + MFA |
+| `POST /api/v1/admin/byok/credentials/{id}/test` | Execute controlled validation | Tenant AI administrator |
+| `PATCH /api/v1/admin/byok/credentials/{id}/bindings` | Change protocol/model/domain scope | Tenant AI administrator + policy approval |
+| `DELETE /api/v1/admin/byok/credentials/{id}` | Disable, revoke, and schedule metadata retention | Tenant AI administrator + dual approval |
 
 All write operations require an idempotency key, immutable audit event, actor identity, tenant context, before/after metadata, and policy decision. API responses never include the provider secret, Vault token, or resolvable internal path.
 
@@ -1086,24 +1087,26 @@ The BFF validates graph responses, filters attributes by user authorization, and
 
 ### 19.2 Core endpoints
 
+All product APIs are versioned under the single prefix `/api/v1` (ADR-028); `/ai/*` and `/internal/*` prefixes are reserved for provider-native and server-only routes.
+
 | Method | Endpoint | Purpose |
 |---|---|---|
-| POST | `/v1/conversations` | Start a permission-aware session |
-| POST | `/v1/conversations/{id}/messages` | Submit text/voice transcript and receive streamed components |
-| GET | `/v1/me/context` | Return role, team, domain, groups, preferences, and allowed scopes |
-| GET | `/v1/pipeline` | Query governed pipeline metrics and dimensions |
-| GET | `/v1/targets/attainment` | Query target, actual, forecast, and gap |
-| POST | `/v1/scenarios` | Run non-persistent forecast scenarios |
-| GET | `/v1/opportunities/{id}/brief` | Return sourced opportunity brief and risks |
-| GET | `/v1/intelligence/signals` | Query evidence-backed market signals |
-| POST | `/v1/dashboards/compose` | Generate a validated dashboard proposal from intent |
-| POST | `/v1/dashboards` | Save a declarative dashboard definition |
-| PATCH | `/v1/dashboards/{id}` | Update layout, cards, filters, or schedule |
-| POST | `/v1/alerts` | Create a governed alert rule |
-| POST | `/v1/actions/preview` | Preview a proposed action and approvals |
-| POST | `/v1/actions/{id}/confirm` | Execute an authorized confirmed action |
-| GET | `/v1/metrics/{id}/lineage` | Show formula, owner, version, sources, and quality |
-| POST | `/v1/feedback` | Record response or recommendation feedback |
+| POST | `/api/v1/conversations` | Start a permission-aware session |
+| POST | `/api/v1/conversations/{id}/messages` | Submit text/voice transcript and receive streamed components |
+| GET | `/api/v1/me/context` | Return role, team, domain, groups, preferences, and allowed scopes |
+| GET | `/api/v1/pipeline` | Query governed pipeline metrics and dimensions |
+| GET | `/api/v1/targets/attainment` | Query target, actual, forecast, and gap |
+| POST | `/api/v1/scenarios` | Run non-persistent forecast scenarios |
+| GET | `/api/v1/opportunities/{id}/brief` | Return sourced opportunity brief and risks |
+| GET | `/api/v1/intelligence/signals` | Query evidence-backed market signals |
+| POST | `/api/v1/dashboards/compose` | Generate a validated dashboard proposal from intent |
+| POST | `/api/v1/dashboards` | Save a declarative dashboard definition |
+| PATCH | `/api/v1/dashboards/{id}` | Update layout, cards, filters, or schedule |
+| POST | `/api/v1/alerts` | Create a governed alert rule |
+| POST | `/api/v1/actions/preview` | Preview a proposed action and approvals |
+| POST | `/api/v1/actions/{id}/confirm` | Execute an authorized confirmed action |
+| GET | `/api/v1/metrics/{id}/lineage` | Show formula, owner, version, sources, and quality |
+| POST | `/api/v1/feedback` | Record response or recommendation feedback |
 
 ### 19.3 Conversational response schema
 

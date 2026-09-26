@@ -7,6 +7,24 @@
 | **Reviewer** | Engineering bootstrap review (pre-Phase 0) |
 | **Verdict** | **Approved as planning baseline, with findings.** No blocking defect in the architecture; the findings below should be resolved or explicitly deferred during Phase 0 discovery. |
 
+## Findings resolution status — updated 2026-09-26 (Phase 0 build)
+
+| Finding | Status | Resolution |
+|---|---|---|
+| F-01 API paths | **Resolved** | ADR-028 `/api/v1`; PRD v3.2 amended (§15.2, §16.5, §19.2) |
+| F-02 sprint plan breadth | **Resolved (draft)** | `docs/discovery/phase-1-plan-validation.md` sizes all tracks A–H; governance acceptance pending |
+| F-03 voice/STT | **Resolved** | ADR-032 defers voice to Phase 2; CONV-01 amended in PRD v3.2 |
+| F-04 ADR numbering | **Resolved** | Kept PRD numbering; gap noted in ADR index |
+| F-05 tenant model | **Resolved** | ADR-033 single-tenant; environment-scoped isolation tests |
+| F-06 Teams ambiguity | **Resolved** | ADR-034: MVP push+email, Teams Phase 2 |
+| F-07 unnamed stores | **Resolved** | ADR-029 (AGE), ADR-030 (Postgres+dbt), ADR-031 (native CDC on Temporal) |
+| F-08 FX source | **Partially** | `fx_rate` table + catalog currency treatment added; provider selection still open (Q3.2) |
+| F-09 offline NFRs | **Open** | Due before Track B caching (Sprint 3) |
+| F-10 schedule risk | **Mitigated (draft)** | Phase-1 plan validation + de-scope levers; board acceptance pending |
+| F-11 file naming | **Open (note)** | Rename at next PRD revision |
+| F-12 retention execution | **Partially** | DPIA retention schedule drafted; Track H story still owed in Phase 2 |
+| F-13 GraphQL guardrail | **Open (note)** | Strike-or-test decision deferred |
+
 ## 1. Scope summary
 
 Sales Northstar is a secure, mobile-first, multi-agent sales intelligence platform: CRM-agnostic canonical data model (Salesforce + Dynamics 365 first connectors), governed semantic layer, conversational analytics with evidence and lineage, self-configurable declarative dashboards, market intelligence with citations, and controlled write-back actions. Delivery is phased: 2-week discovery, 12–16 week MVP, 8–12 week hardening, ongoing optimization.

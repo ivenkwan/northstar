@@ -20,6 +20,10 @@ Versioned, release-gating test cases that encode the platform's core invariants.
 
 Phase 1, Tracks A/B (contract goldens) and Track H (permission goldens) — see `todo.md`.
 
+## Phase 0 artifact
+
+- [`acceptance-suite.md`](acceptance-suite.md) — stable case IDs (GPM/GW/GA/SC) covering §23.2–§23.3 and §28 scenarios; automation lands with the owning track's code from Sprint 2.
+
 ## AI-assisted development
 
 ZCode is the standard AI coding workbench for this component. Before editing, follow the repository root [`AGENTS.md`](../../AGENTS.md) and [`docs/development/zcode-toolchain.md`](../../docs/development/zcode-toolchain.md); use the nearest PRD sections and ADRs as authoritative constraints. ZCode-generated changes require human diff review and the same deterministic checks and CI gates as human-authored changes.
