@@ -3,7 +3,7 @@ name = "northstar-bff"
 version = "0.1.0"
 description = "Mobile BFF (PRD §13): product API, typed conversation components (§19.3), SSE streaming"
 requires-python = ">=3.12"
-dependencies = ["pydantic>=2.9", "fastapi>=0.115"]
+dependencies = ["pydantic>=2.9", "fastapi>=0.115", "uvicorn>=0.32"]
 
 [build-system]
 requires = ["hatchling"]

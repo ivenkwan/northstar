@@ -74,14 +74,26 @@ class OrchestratorDep:
         raise HTTPException(status_code=503, detail="orchestrator unavailable")
 
 
-_dep = OrchestratorDep()
+_UNSET = object()
+_dep: object = _UNSET  # tests may inject a stub by assigning bff.api._dep
+
+
+def _default_dep() -> OrchestratorDep:
+    """Live wiring runs the real pipeline in-process (bff/composition.py); stub mode 503s."""
+    import os
+
+    if os.environ.get("NORTHSTAR_BFF_MODE", "live") == "stub":
+        return OrchestratorDep()
+    from .composition import LiveOrchestratorDep
+
+    return LiveOrchestratorDep()
 
 
 @app.post("/api/v1/conversations/{conversation_id}/messages")
 async def post_message(conversation_id: str, body: MessageIn,
                        authorization: str | None = Header(default=None),
                        accept: str = Header(default="application/json"),
-                       orch: OrchestratorDep = Depends(lambda: _dep)) -> Response:
+                       orch: OrchestratorDep = Depends(lambda: _dep if _dep is not _UNSET else _default_dep())) -> Response:
     user = _user(authorization)
     result = await orch.converse(user, body.text)
     if "text/event-stream" in accept:

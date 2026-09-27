@@ -39,8 +39,11 @@ def test_sse_stream_has_start_component_stop_order():
     import bff.api as api
 
     api._dep = Stub()
-    resp = client.post("/api/v1/conversations/c1/messages", json={"text": "hi"},
-                       headers={**AUTH, "Accept": "text/event-stream"})
+    try:
+        resp = client.post("/api/v1/conversations/c1/messages", json={"text": "hi"},
+                           headers={**AUTH, "Accept": "text/event-stream"})
+    finally:
+        api._dep = api._UNSET  # restore live composition for other tests
     assert resp.status_code == 200
     events = [line.removeprefix("event: ") for line in resp.text.splitlines() if line.startswith("event: ")]
     assert events == ["message_start", "component", "message_stop"]  # terminator last

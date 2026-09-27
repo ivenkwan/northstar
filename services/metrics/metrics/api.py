@@ -71,3 +71,8 @@ async def allocation_total(q: AllocationQuery) -> dict:
 async def allocation_groups(q: AllocationQuery) -> dict:
     """Operational group views; shared domains labeled non-additive with their rule."""
     return {"groups": [g.model_dump() for g in group_view(q.domain_amounts_minor, q.memberships)]}
+
+
+@app.get("/healthz")
+async def health() -> dict:
+    return {"status": "ok"}
