@@ -6,6 +6,7 @@ import { accountId as mkAccount, dashboardId as mkDashboard, fiscalPeriod as mkP
 
 export type RootStackParamList = {
   Home: undefined;
+  Today: undefined; // §10.1 first destination: briefing, alerts, target gap, priority actions
   Pipeline: Readonly<{ ownerId?: SalespersonId; period: FiscalPeriod }>;
   Account: Readonly<{ accountId: AccountId }>;
   Intelligence: Readonly<{ topic?: string }>;
@@ -17,6 +18,7 @@ export type RouteName = keyof RootStackParamList;
 
 export type ResolvedRoute =
   | { route: "Home" }
+  | { route: "Today" }
   | { route: "Pipeline"; params: RootStackParamList["Pipeline"] }
   | { route: "Account"; params: RootStackParamList["Account"] }
   | { route: "Intelligence"; params: RootStackParamList["Intelligence"] }
@@ -31,6 +33,8 @@ export function resolveDeepLink(url: string): ResolvedRoute | null {
   switch (link.route) {
     case "Home":
       return { route: "Home" };
+    case "Today":
+      return { route: "Today" };
     case "Pipeline":
       return { route: "Pipeline", params: { period: mkPeriod(link.period ?? "FY27-Q1") } };
     case "Account":

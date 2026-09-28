@@ -118,7 +118,7 @@ export type Subgraph = z.infer<typeof SubgraphSchema>;
 
 /** Deep links (§17.7) — runtime-validated before navigation; permission check at open. */
 export const DeepLinkSchema = z.object({
-  route: z.enum(["Home", "Pipeline", "Account", "Intelligence", "Dashboard", "Conversation"]),
+  route: z.enum(["Home", "Today", "Pipeline", "Account", "Intelligence", "Dashboard", "Conversation"]),
   accountId: z.string().optional(),
   dashboardId: z.string().optional(),
   threadId: z.string().optional(),

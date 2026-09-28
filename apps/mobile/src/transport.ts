@@ -7,8 +7,8 @@
  */
 import type { ApiError, Conversation } from "@northstar/contracts";
 import { USER_FACING_MESSAGES } from "@northstar/contracts";
-import type { ConversationResponse } from "@northstar/validation";
-import { ConversationResponseSchema } from "@northstar/validation";
+import type { Briefing, ConversationResponse } from "@northstar/validation";
+import { BriefingSchema, ConversationResponseSchema } from "@northstar/validation";
 
 import { DEV_AUTH_HEADER } from "./config";
 
@@ -34,7 +34,7 @@ async function postJson<T>(url: string, body: unknown): Promise<T> {
     const parsed: unknown = await response.json().catch(() => null);
     const apiError = parsed as Partial<ApiError> | null;
     const code = apiError?.code ?? "INTERNAL_ERROR";
-    const known = USER_FACING_MESSAGES[code as keyof typeof USER_FACING_MESSAGES];
+    const known = USER_FACING_MESSAGES[code];
     throw new ApiRequestError(known ?? USER_FACING_MESSAGES.INTERNAL_ERROR, code);
   }
   return (await response.json()) as T;
@@ -57,4 +57,9 @@ export async function askQuestion(apiBase: string, text: string): Promise<Conver
   const conversation = await postJson<Conversation>(`${apiBase}/api/v1/conversations`, {});
   const raw: unknown = await postJson(`${apiBase}/api/v1/conversations/${conversation.conversationId}/messages`, { text });
   return ConversationResponseSchema.parse(raw); // malformed/mismatched payloads reject here
+}
+
+export async function getTodayBriefing(apiBase: string): Promise<Briefing> {
+  const raw: unknown = await getJson(`${apiBase}/api/v1/briefings/today`);
+  return BriefingSchema.parse(raw); // §7.1 payload crosses the Zod boundary here (ADR-026)
 }

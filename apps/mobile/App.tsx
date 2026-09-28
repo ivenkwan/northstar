@@ -4,6 +4,7 @@ import { StatusBar } from "expo-status-bar";
 
 import { ConversationScreen } from "./screens/ConversationScreen";
 import { HomeScreen } from "./screens/HomeScreen";
+import { TodayScreen } from "./screens/TodayScreen";
 import type { RootStackParamList } from "./src/index";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -22,6 +23,7 @@ const linking: LinkingOptions<RootStackParamList> = {
       Account: "Account",
       Intelligence: "Intelligence",
       Dashboard: "Dashboard",
+      Today: "Today",
     },
   },
 };
@@ -31,9 +33,10 @@ export default function App() {
     <>
       <StatusBar style="dark" />
       <NavigationContainer linking={linking}>
-        <Stack.Navigator initialRouteName="Home">
-          <Stack.Screen name="Home" component={HomeScreen} options={{ title: "Northstar" }} />
+        <Stack.Navigator initialRouteName="Today">
+          <Stack.Screen name="Today" component={TodayScreen} options={{ title: "Today" }} />
           <Stack.Screen name="Conversation" component={ConversationScreen} options={{ title: "Ask" }} />
+          <Stack.Screen name="Home" component={HomeScreen} options={{ title: "Settings" }} />
         </Stack.Navigator>
       </NavigationContainer>
     </>

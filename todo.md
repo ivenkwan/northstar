@@ -119,19 +119,19 @@ Sprints are two weeks. Tracks A and B follow the PRD §24.2 sprint table verbati
 - [x] **A:** BYOK admin APIs → `byok/api.py` (register/list/activate/rotate/revoke) with idempotency keys + audit events (§16.5); redaction tested. **[OPEN: test/bindings endpoint surface — next iteration]**.
 - [ ] **A:** APISIX route config controller — validate/policy-check/stage/promote. Partial: pre-deployment secret validation + probes exist inside `byok` activate; the controller service itself is **[OPEN: next iteration]** (§16.3–§16.4).
 - [ ] **B:** Typed admin portal screens — `apps/admin` remains a README stub. **[OPEN: next iteration]** (React Hook Form + Zod).
-- [ ] **D:** Opportunity Agent (deal brief, risks). Partial: attainment/forecast/scenarios + exception detection built (`engine.py`, `manager.py`); the deal-brief composition is **[OPEN: next iteration]** (§9.1).
+- [x] **D:** Opportunity Agent deal brief → `orchestrator/briefing.py`: transparent indicators (stale/pushes/missing-next-step/stage-age/late-low-prob), ranked risks, mapped next steps, evidence on every claim; exposed at `GET /api/v1/opportunities/{id}/brief` (§9.1; closed 2026-09-27).
 - [x] **E:** News ingestion → `connectors/news.py`: rights enforcement, SimHash clustering, taxonomy-adjacent signals with rights metadata; entity resolution in KG (§8.4). **[DEPLOY]** licensed sources.
 - [x] **F:** Alerts foundation → `services/alerts`: predicate/certified-metric validation (BFF), quiet hours, frequency caps, digests, metadata-only push + deep links re-authorized at open (scope re-check in pipeline). §8.6.
 
 ### Sprint 5 — Resilience and composition — *Exit: chaos and type-quality gates pass*
 
-- [ ] **A:** `ai-proxy-multi` resilience policies (weighted balancing, health checks, bounded retries) — single-provider policies configured; the multi policy config + GW-10 retry-bound goldens are **[OPEN: next iteration]** (§15.4; ADRs 022/024; conversion machinery already disabled-by-default and golden-tested).
+- [x] **A:** `ai-proxy-multi` resilience → `internal-capability-pool` route: weighted round-robin (70/30), active health checks, bounded retries (max 2 on 429/5xx, 10s window), time/size caps; GW-10 goldens assert bounds and Vault-only credentials (§15.4; ADRs 022/024; 2026-09-27).
 - [x] **B:** Navigation/deep-link hardening → runtime-validated links → typed routes (`packages/validation` + `apps/mobile`); strict compilation clean. **[OPEN: ESLint rule enforcement for §17.3 — next iteration]**.
 - [x] **D:** Market intelligence → relevance (recency/entity/signal types), signal-to-opportunity mapping (entity_keys), sourced-vs-interpretation separation (pipeline + quarantined evidence) (§7.3, §8.4).
 - [x] **D:** Dashboard Composer → `POST /api/v1/dashboards/compose` proposal (never auto-saved) + server-side save validation (certified metrics, allowed dimensions, layout) — Scenario D tests in `test_compose.py` (§8.5).
 - [x] **E:** Knowledge-graph service → typed IR → parameterized Cypher, provenance-bearing nodes/edges, bounded subgraphs, raw-query rejection golden (§18; ADR-026).
 - [x] **G:** Controlled actions → preview (old/new/impact) → confirm with idempotent receipts + impact-tier approvals; Temporal workers are the **[DEPLOY]** execution tier (§8.7; Scenario E).
-- [ ] **F:** Briefings (daily seller composition, §7.1) — **[OPEN: next iteration]**; inputs exist (metrics, signals, exceptions).
+- [x] **F:** Briefings → `compose_daily_briefing`: KPIs from the certified engine, top-3 ranked risks, two sourced market signals, overdue actions, weekend-aware greeting; exposed at `GET /api/v1/briefings/today` and rendered by the Expo Today screen (§7.1; closed 2026-09-27).
 
 ### Sprint 6 — Hardening and release — *Exit: production readiness review approved*
 
@@ -160,7 +160,7 @@ Sprints are two weeks. Tracks A and B follow the PRD §24.2 sprint table verbati
 - [x] 3. Provider credentials only in Vault: `$SECRET://` references, secret-scan in CI, no plaintext paths (GW-02, security.yml).
 - [x] 4. Missing/revoked secret fails closed with sanitized typed error (byok tests, ADR-023).
 - [x] 5. Tenant/environment/protocol/model bindings enforced before provider invocation (byok `resolve_for_route` tests).
-- [ ] 6. Retry/fallback bounded and tested — **[OPEN: retry bounds config + GW-10 golden — next iteration]**; no platform-key fallback is enforced and tested.
+- [x] 6. Retry/fallback bounded and tested → `internal-capability-pool` route (`ai-proxy-multi`: max_retries 2, retry-on 429/5xx, 10s failure window < timeout < stream cap) + GW-10 goldens incl. no-platform-key-fallback across all AI routes (criterion 6 closed 2026-09-27).
 - [x] 7. Mobile source TypeScript-only; strict compilation passes with no waivers (5 packages, `tsc --noEmit` clean). RN shell **[DEPLOY]**.
 - [x] 8. API clients generated from OpenAPI (drift-checked); runtime Zod validation on all untrusted dynamic payloads (§23.4 tests).
 - [x] 9. Navigation/dashboards/graph/conversation types are discriminated or branded (validation + mobile packages).
@@ -235,18 +235,18 @@ Full-marker audit against repository state (this date). Everything repo-side tha
 
 ### Repo-side gaps to finish next build iteration
 
-1. **ESLint prohibited-pattern rule pack** (§17.3) — no ESLint config exists yet; CI currently enforces `tsc --noEmit` only.
-2. **Spectral ruleset** for the OpenAPI lint step (§17.4 step 2) — pipeline generates + drift-checks, does not lint.
+1. ~~ESLint prohibited-pattern rule pack~~ **DONE 2026-09-27**: `eslint.config.js` (type-checked §17.3 rules incl. fetch-boundary and double-assertion bans) wired into ci/release workflows; zero violations.
+2. ~~Spectral ruleset~~ **DONE 2026-09-27**: `tools/codegen/spectral.yaml` (path prefix ADR-028, error envelopes, operation ids, oneOf discriminators) in CI; 0 errors; DashboardCard now declares its discriminator.
 3. **kind + Tilt configs** — the last unpinned piece of the §17.9 toolchain row.
 4. **In-code OTel SDK instrumentation** — collectors/rules are configured; services do not yet emit spans/metrics.
 5. **APISIX route config controller** (§16.3–§16.4) — validate/policy-check/stage/promote service; today the checks live inside `byok.activate`.
 6. **BYOK `test` + `bindings` endpoint surface** (§16.5) — lifecycle methods exist; two API routes missing.
-7. **Opportunity Agent deal-brief composition** (§9.1) — inputs exist (engine + exceptions), the brief itself is unbuilt.
-8. **Briefings** — daily seller briefing composition (§7.1).
-9. **`ai-proxy-multi` resilience policy config + GW-10 retry-bound golden** (§15.4; criterion 6).
+7. ~~Opportunity Agent deal brief~~ **DONE 2026-09-27**: `orchestrator/briefing.py` + endpoint + tests.
+8. ~~Briefings~~ **DONE 2026-09-27**: daily composition + `/api/v1/briefings/today` + Expo Today screen.
+9. ~~ai-proxy-multi + GW-10~~ **DONE 2026-09-27**: see criterion 6 above.
 10. **GW-04..07 goldens as live-route tests** — currently config-level + fixture-based.
 11. **`apps/admin` typed portal** (React Hook Form + Zod) — still a README stub.
-12. **Expand eval corpus** — persona-scoped sets beyond the current 6-case dataset (§23).
+12. ~~Expand eval corpus~~ **DONE 2026-09-27**: 6 → 14 cases (peer-masking, injection variants, write intents, generation targets); gates still 1.00/0.90.
 
 ### External gates (human/enterprise — cannot be built from this repo)
 
@@ -259,6 +259,8 @@ Full-marker audit against repository state (this date). Everything repo-side tha
 
 ## Change log
 
+- **2026-09-27:** Built option 2 (richer phone demo): deal-brief + daily-briefing engines with tests (§9.1/§7.1), `/api/v1/briefings/today` + `/api/v1/opportunities/{id}/brief` with OpenAPI schemas + regenerated contracts, Zod briefing schemas (§7.1 shape caps, sourced signals), Expo **Today** screen (KPIs, ranked risks with severity labels, sourced signals, pull-to-refresh) as the initial route, eval corpus 6 → 14. Live smoke: attainment 60%, top risk + next step, 2 sourced signals. 203 Python tests, ESLint clean, 10 turbo tasks, spectral 0 errors, Android bundle 840 modules.
+- **2026-09-27:** Closed the release-gate gaps (option 1): ESLint §17.3 rule pack (type-checked, zero violations), Spectral §17.4 contract lint (0 errors, discriminator added to DashboardCard), ai-proxy-multi capability pool with bounded retries + four GW-10 goldens — engineering criterion 6 closed. 192 Python tests, ESLint clean, 10 turbo tasks, drift zero; lint + spectral wired into ci.yml and release.yml.
 - **2026-09-27:** Android app shell: Expo SDK 57 wired into `apps/mobile` (RN 0.86.3, TS ~6.0.3, React Navigation), Home + Ask screens against the local stack, fetch confined to the transport module, Zod boundary at the response edge; Metro import fixes (extensionless relative imports in mobile/contracts/validation); Android bundle export verified (838 modules). 188 Python tests + 10 turbo tasks green.
 - **2026-09-27:** Full todo.md marker audit: Phase 1 sprints/scenarios/criteria re-tickd against verified evidence (188 tests after adding Scenario D composer tests); Bootstrap toolchain/validation/security items ticked with annotations; genuinely open items re-marked with reasons; "Next build iteration" section consolidates all remaining repo-side gaps (12 items) and external gates.
 - **2026-09-27:** README updated to system snapshot v1.0 (2026-09-27): as-built system diagram and data-flow diagram (Mermaid), build-state key, status line and ADR range refreshed to Phases 0–4.

@@ -5,7 +5,11 @@
     "version": "1.0.0",
     "description": "Mobile BFF API. All product APIs versioned under /api/v1 (ADR-028). Typed error envelope before streaming starts (PRD §17.8)."
   },
-  "servers": [{ "url": "/" }],
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
   "paths": {
     "/api/v1/conversations": {
       "post": {
@@ -16,12 +20,18 @@
             "description": "Conversation created",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Conversation" }
+                "schema": {
+                  "$ref": "#/components/schemas/Conversation"
+                }
               }
             }
           },
-          "401": { "$ref": "#/components/responses/ApiError" },
-          "403": { "$ref": "#/components/responses/ApiError" }
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          }
         }
       }
     },
@@ -30,13 +40,22 @@
         "operationId": "postMessage",
         "summary": "Submit text and receive streamed components",
         "parameters": [
-          { "name": "conversationId", "in": "path", "required": true, "schema": { "type": "string" } }
+          {
+            "name": "conversationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
         ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/MessageRequest" }
+              "schema": {
+                "$ref": "#/components/schemas/MessageRequest"
+              }
             }
           }
         },
@@ -45,16 +64,26 @@
             "description": "Streamed typed components (text/event-stream) or JSON response",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ConversationResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationResponse"
+                }
               },
               "text/event-stream": {
-                "schema": { "type": "string" }
+                "schema": {
+                  "type": "string"
+                }
               }
             }
           },
-          "401": { "$ref": "#/components/responses/ApiError" },
-          "422": { "$ref": "#/components/responses/ApiError" },
-          "503": { "$ref": "#/components/responses/ApiError" }
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "422": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ApiError"
+          }
         }
       }
     },
@@ -63,7 +92,14 @@
         "operationId": "voiceTranscript",
         "summary": "Speech-to-text preview requiring user confirmation (ADR-032; disabled pending governance approval)",
         "parameters": [
-          { "name": "conversationId", "in": "path", "required": true, "schema": { "type": "string" } }
+          {
+            "name": "conversationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
         ],
         "requestBody": {
           "required": true,
@@ -71,10 +107,17 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["audioRef"],
+                "required": [
+                  "audioRef"
+                ],
                 "properties": {
-                  "audioRef": { "type": "string", "minLength": 1 },
-                  "language": { "type": "string" }
+                  "audioRef": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "language": {
+                    "type": "string"
+                  }
                 },
                 "additionalProperties": false
               }
@@ -88,18 +131,35 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["transcript", "confirmed", "notice"],
+                  "required": [
+                    "transcript",
+                    "confirmed",
+                    "notice"
+                  ],
                   "properties": {
-                    "transcript": { "type": "string" },
-                    "confirmed": { "type": "boolean", "enum": [false] },
-                    "notice": { "type": "string" }
+                    "transcript": {
+                      "type": "string"
+                    },
+                    "confirmed": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "notice": {
+                      "type": "string"
+                    }
                   }
                 }
               }
             }
           },
-          "403": { "$ref": "#/components/responses/ApiError" },
-          "401": { "$ref": "#/components/responses/ApiError" }
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          }
         }
       }
     },
@@ -112,11 +172,15 @@
             "description": "User context",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/UserContext" }
+                "schema": {
+                  "$ref": "#/components/schemas/UserContext"
+                }
               }
             }
           },
-          "401": { "$ref": "#/components/responses/ApiError" }
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          }
         }
       }
     },
@@ -125,19 +189,36 @@
         "operationId": "queryPipeline",
         "summary": "Query governed pipeline metrics and dimensions",
         "parameters": [
-          { "name": "period", "in": "query", "schema": { "type": "string" } },
-          { "name": "asOf", "in": "query", "schema": { "type": "string", "format": "date-time" } }
+          {
+            "name": "period",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "asOf",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
         ],
         "responses": {
           "200": {
             "description": "Pipeline metrics",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/MetricRows" }
+                "schema": {
+                  "$ref": "#/components/schemas/MetricRows"
+                }
               }
             }
           },
-          "401": { "$ref": "#/components/responses/ApiError" }
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          }
         }
       }
     },
@@ -146,19 +227,37 @@
         "operationId": "queryAttainment",
         "summary": "Target, actual, forecast, and gap",
         "parameters": [
-          { "name": "assigneeId", "in": "query", "required": true, "schema": { "type": "string" } },
-          { "name": "period", "in": "query", "required": true, "schema": { "type": "string" } }
+          {
+            "name": "assigneeId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
         ],
         "responses": {
           "200": {
             "description": "Attainment report",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/MetricRows" }
+                "schema": {
+                  "$ref": "#/components/schemas/MetricRows"
+                }
               }
             }
           },
-          "401": { "$ref": "#/components/responses/ApiError" }
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          }
         }
       }
     },
@@ -167,18 +266,29 @@
         "operationId": "metricLineage",
         "summary": "Formula, owner, version, sources, quality",
         "parameters": [
-          { "name": "metricId", "in": "path", "required": true, "schema": { "type": "string" } }
+          {
+            "name": "metricId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
         ],
         "responses": {
           "200": {
             "description": "Metric lineage",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/MetricLineage" }
+                "schema": {
+                  "$ref": "#/components/schemas/MetricLineage"
+                }
               }
             }
           },
-          "404": { "$ref": "#/components/responses/ApiError" }
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          }
         }
       }
     },
@@ -190,7 +300,9 @@
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/ComposeRequest" }
+              "schema": {
+                "$ref": "#/components/schemas/ComposeRequest"
+              }
             }
           }
         },
@@ -199,11 +311,15 @@
             "description": "Dashboard proposal (unsaved; requires confirmation — Scenario D)",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/DashboardDefinition" }
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardDefinition"
+                }
               }
             }
           },
-          "422": { "$ref": "#/components/responses/ApiError" }
+          "422": {
+            "$ref": "#/components/responses/ApiError"
+          }
         }
       }
     },
@@ -215,7 +331,9 @@
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/DashboardDefinition" }
+              "schema": {
+                "$ref": "#/components/schemas/DashboardDefinition"
+              }
             }
           }
         },
@@ -224,11 +342,15 @@
             "description": "Saved",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/DashboardDefinition" }
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardDefinition"
+                }
               }
             }
           },
-          "422": { "$ref": "#/components/responses/ApiError" }
+          "422": {
+            "$ref": "#/components/responses/ApiError"
+          }
         }
       }
     },
@@ -240,7 +362,9 @@
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/AlertRule" }
+              "schema": {
+                "$ref": "#/components/schemas/AlertRule"
+              }
             }
           }
         },
@@ -249,11 +373,15 @@
             "description": "Created",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/AlertRule" }
+                "schema": {
+                  "$ref": "#/components/schemas/AlertRule"
+                }
               }
             }
           },
-          "422": { "$ref": "#/components/responses/ApiError" }
+          "422": {
+            "$ref": "#/components/responses/ApiError"
+          }
         }
       }
     },
@@ -265,7 +393,9 @@
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/ActionRequest" }
+              "schema": {
+                "$ref": "#/components/schemas/ActionRequest"
+              }
             }
           }
         },
@@ -274,11 +404,15 @@
             "description": "Preview with old/new values and impact (Scenario E)",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ActionPreview" }
+                "schema": {
+                  "$ref": "#/components/schemas/ActionPreview"
+                }
               }
             }
           },
-          "403": { "$ref": "#/components/responses/ApiError" }
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          }
         }
       }
     },
@@ -287,19 +421,32 @@
         "operationId": "confirmAction",
         "summary": "Execute an authorized confirmed action (idempotent by actionId)",
         "parameters": [
-          { "name": "actionId", "in": "path", "required": true, "schema": { "type": "string" } }
+          {
+            "name": "actionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
         ],
         "responses": {
           "200": {
             "description": "Action receipt",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ActionReceipt" }
+                "schema": {
+                  "$ref": "#/components/schemas/ActionReceipt"
+                }
               }
             }
           },
-          "403": { "$ref": "#/components/responses/ApiError" },
-          "409": { "$ref": "#/components/responses/ApiError" }
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiError"
+          }
         }
       }
     },
@@ -311,12 +458,71 @@
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/Feedback" }
+              "schema": {
+                "$ref": "#/components/schemas/Feedback"
+              }
             }
           }
         },
         "responses": {
-          "202": { "description": "Recorded" }
+          "202": {
+            "description": "Recorded"
+          }
+        }
+      }
+    },
+    "/api/v1/briefings/today": {
+      "get": {
+        "operationId": "getTodayBriefing",
+        "summary": "Daily seller briefing (§7.1): KPIs, top risks, market signals",
+        "responses": {
+          "200": {
+            "description": "Today briefing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Briefing"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        }
+      }
+    },
+    "/api/v1/opportunities/{opportunityId}/brief": {
+      "get": {
+        "operationId": "getOpportunityBrief",
+        "summary": "Sourced opportunity brief and risks (§9.1, §19.2)",
+        "parameters": [
+          {
+            "name": "opportunityId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deal brief",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DealBrief"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          }
         }
       }
     }
@@ -327,7 +533,9 @@
         "description": "Typed error envelope (PRD §17.8)",
         "content": {
           "application/json": {
-            "schema": { "$ref": "#/components/schemas/ApiError" }
+            "schema": {
+              "$ref": "#/components/schemas/ApiError"
+            }
           }
         }
       }
@@ -335,22 +543,50 @@
     "schemas": {
       "ApiError": {
         "type": "object",
-        "required": ["code", "message", "correlationId", "retryable"],
+        "required": [
+          "code",
+          "message",
+          "correlationId",
+          "retryable"
+        ],
         "properties": {
           "code": {
             "type": "string",
-            "enum": ["UNAUTHENTICATED", "FORBIDDEN", "VALIDATION_FAILED", "AI_CREDENTIAL_UNAVAILABLE",
-                     "AI_RATE_LIMITED", "AI_PROTOCOL_FEATURE_UNSUPPORTED", "DEPENDENCY_UNAVAILABLE", "INTERNAL_ERROR"]
+            "enum": [
+              "UNAUTHENTICATED",
+              "FORBIDDEN",
+              "VALIDATION_FAILED",
+              "AI_CREDENTIAL_UNAVAILABLE",
+              "AI_RATE_LIMITED",
+              "AI_PROTOCOL_FEATURE_UNSUPPORTED",
+              "DEPENDENCY_UNAVAILABLE",
+              "INTERNAL_ERROR"
+            ]
           },
-          "message": { "type": "string" },
-          "correlationId": { "type": "string" },
-          "retryable": { "type": "boolean" },
-          "retryAfterSeconds": { "type": "integer" },
+          "message": {
+            "type": "string"
+          },
+          "correlationId": {
+            "type": "string"
+          },
+          "retryable": {
+            "type": "boolean"
+          },
+          "retryAfterSeconds": {
+            "type": "integer"
+          },
           "fieldErrors": {
             "type": "array",
             "items": {
               "type": "object",
-              "properties": { "field": { "type": "string" }, "message": { "type": "string" } }
+              "properties": {
+                "field": {
+                  "type": "string"
+                },
+                "message": {
+                  "type": "string"
+                }
+              }
             }
           }
         },
@@ -358,54 +594,110 @@
       },
       "Conversation": {
         "type": "object",
-        "required": ["conversationId", "scopeType", "scopeId"],
+        "required": [
+          "conversationId",
+          "scopeType",
+          "scopeId"
+        ],
         "properties": {
-          "conversationId": { "type": "string" },
-          "scopeType": { "type": "string" },
-          "scopeId": { "type": "string" },
-          "createdAt": { "type": "string", "format": "date-time" }
+          "conversationId": {
+            "type": "string"
+          },
+          "scopeType": {
+            "type": "string"
+          },
+          "scopeId": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "MessageRequest": {
         "type": "object",
-        "required": ["text"],
+        "required": [
+          "text"
+        ],
         "properties": {
-          "text": { "type": "string", "minLength": 1 },
-          "clientMessageId": { "type": "string" }
+          "text": {
+            "type": "string",
+            "minLength": 1
+          },
+          "clientMessageId": {
+            "type": "string"
+          }
         },
         "additionalProperties": false
       },
       "ConversationResponse": {
         "type": "object",
-        "required": ["messageId", "answer", "scope", "components", "evidence", "warnings", "suggestedActions"],
+        "required": [
+          "messageId",
+          "answer",
+          "scope",
+          "components",
+          "evidence",
+          "warnings",
+          "suggestedActions"
+        ],
         "properties": {
-          "messageId": { "type": "string" },
-          "answer": { "type": "string" },
+          "messageId": {
+            "type": "string"
+          },
+          "answer": {
+            "type": "string"
+          },
           "scope": {
             "type": "object",
-            "required": ["type", "id", "asOf"],
+            "required": [
+              "type",
+              "id",
+              "asOf"
+            ],
             "properties": {
-              "type": { "type": "string" },
-              "id": { "type": "string" },
-              "asOf": { "type": "string", "format": "date-time" }
+              "type": {
+                "type": "string"
+              },
+              "id": {
+                "type": "string"
+              },
+              "asOf": {
+                "type": "string",
+                "format": "date-time"
+              }
             }
           },
           "components": {
             "type": "array",
-            "items": { "$ref": "#/components/schemas/Component" }
+            "items": {
+              "$ref": "#/components/schemas/Component"
+            }
           },
           "evidence": {
             "type": "array",
-            "items": { "$ref": "#/components/schemas/EvidenceRef" }
+            "items": {
+              "$ref": "#/components/schemas/EvidenceRef"
+            }
           },
-          "warnings": { "type": "array", "items": { "type": "string" } },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "suggestedActions": {
             "type": "array",
             "items": {
               "type": "object",
               "properties": {
-                "action": { "type": "string" },
-                "requiresConfirmation": { "type": "boolean" }
+                "action": {
+                  "type": "string"
+                },
+                "requiresConfirmation": {
+                  "type": "boolean"
+                }
               }
             }
           }
@@ -413,231 +705,818 @@
       },
       "Component": {
         "type": "object",
-        "required": ["type"],
+        "required": [
+          "type"
+        ],
         "properties": {
           "type": {
             "type": "string",
-            "enum": ["narrative", "kpi", "kpi_table", "chart", "table", "evidence_chips"]
+            "enum": [
+              "narrative",
+              "kpi",
+              "kpi_table",
+              "chart",
+              "table",
+              "evidence_chips"
+            ]
           },
-          "title": { "type": "string" },
-          "payload": { "type": "object" },
-          "datasetRef": { "type": "string" },
-          "metricDefinitionId": { "type": "string" }
+          "title": {
+            "type": "string"
+          },
+          "payload": {
+            "type": "object"
+          },
+          "datasetRef": {
+            "type": "string"
+          },
+          "metricDefinitionId": {
+            "type": "string"
+          }
         },
         "additionalProperties": false
       },
       "EvidenceRef": {
         "type": "object",
-        "required": ["type", "ref", "label"],
+        "required": [
+          "type",
+          "ref",
+          "label"
+        ],
         "properties": {
-          "type": { "type": "string", "enum": ["crm_record", "plan_row", "news_item", "metric_definition"] },
-          "ref": { "type": "string" },
-          "label": { "type": "string" }
+          "type": {
+            "type": "string",
+            "enum": [
+              "crm_record",
+              "plan_row",
+              "news_item",
+              "metric_definition"
+            ]
+          },
+          "ref": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          }
         }
       },
       "UserContext": {
         "type": "object",
-        "required": ["userId", "role", "teamIds", "domainIds", "groupIds", "preferences"],
+        "required": [
+          "userId",
+          "role",
+          "teamIds",
+          "domainIds",
+          "groupIds",
+          "preferences"
+        ],
         "properties": {
-          "userId": { "type": "string" },
-          "role": { "type": "string" },
-          "teamIds": { "type": "array", "items": { "type": "string" } },
-          "domainIds": { "type": "array", "items": { "type": "string" } },
-          "groupIds": { "type": "array", "items": { "type": "string" } },
+          "userId": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "teamIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "domainIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "groupIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "preferences": {
             "type": "object",
             "properties": {
-              "currency": { "type": "string" },
-              "locale": { "type": "string" }
+              "currency": {
+                "type": "string"
+              },
+              "locale": {
+                "type": "string"
+              }
             }
           },
-          "allowedScopes": { "type": "array", "items": { "type": "string" } }
+          "allowedScopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
         }
       },
       "MetricRows": {
         "type": "object",
-        "required": ["metrics"],
+        "required": [
+          "metrics"
+        ],
         "properties": {
           "metrics": {
             "type": "array",
-            "items": { "$ref": "#/components/schemas/MetricResult" }
+            "items": {
+              "$ref": "#/components/schemas/MetricResult"
+            }
           }
         }
       },
       "MetricResult": {
         "type": "object",
-        "required": ["metricId", "version", "scope", "asOf", "reconciliationStatus"],
+        "required": [
+          "metricId",
+          "version",
+          "scope",
+          "asOf",
+          "reconciliationStatus"
+        ],
         "properties": {
-          "metricId": { "type": "string" },
-          "version": { "type": "integer" },
-          "value": { "type": ["number", "null"] },
-          "suppressedReason": { "type": ["string", "null"] },
-          "scope": { "type": "string" },
-          "asOf": { "type": "string" },
-          "currency": { "type": "string" },
-          "reconciliationStatus": { "type": "string" }
+          "metricId": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer"
+          },
+          "value": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "suppressedReason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "scope": {
+            "type": "string"
+          },
+          "asOf": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "reconciliationStatus": {
+            "type": "string"
+          }
         }
       },
       "MetricLineage": {
         "type": "object",
-        "required": ["metricId", "version", "name", "formula", "grain", "certification"],
+        "required": [
+          "metricId",
+          "version",
+          "name",
+          "formula",
+          "grain",
+          "certification"
+        ],
         "properties": {
-          "metricId": { "type": "string" },
-          "version": { "type": "integer" },
-          "name": { "type": "string" },
-          "formula": { "type": "string" },
-          "grain": { "type": "string" },
-          "owner": { "type": "string" },
-          "certification": { "type": "string" }
+          "metricId": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "formula": {
+            "type": "string"
+          },
+          "grain": {
+            "type": "string"
+          },
+          "owner": {
+            "type": "string"
+          },
+          "certification": {
+            "type": "string"
+          }
         }
       },
       "ComposeRequest": {
         "type": "object",
-        "required": ["intent"],
+        "required": [
+          "intent"
+        ],
         "properties": {
-          "intent": { "type": "string" },
-          "context": { "type": "object" }
+          "intent": {
+            "type": "string"
+          },
+          "context": {
+            "type": "object"
+          }
         },
         "additionalProperties": false
       },
       "DashboardDefinition": {
         "type": "object",
-        "required": ["title", "scope", "layout", "cards"],
+        "required": [
+          "title",
+          "scope",
+          "layout",
+          "cards"
+        ],
         "properties": {
-          "dashboardId": { "type": "string" },
-          "title": { "type": "string" },
+          "dashboardId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
           "scope": {
             "type": "object",
-            "required": ["type", "id"],
+            "required": [
+              "type",
+              "id"
+            ],
             "properties": {
-              "type": { "type": "string", "enum": ["seller", "team", "domain", "group"] },
-              "id": { "type": "string" }
+              "type": {
+                "type": "string",
+                "enum": [
+                  "seller",
+                  "team",
+                  "domain",
+                  "group"
+                ]
+              },
+              "id": {
+                "type": "string"
+              }
             }
           },
-          "globalFilters": { "type": "object" },
+          "globalFilters": {
+            "type": "object"
+          },
           "layout": {
             "type": "object",
-            "required": ["mode", "columns"],
+            "required": [
+              "mode",
+              "columns"
+            ],
             "properties": {
-              "mode": { "type": "string", "enum": ["mobile_grid", "tablet_grid"] },
-              "columns": { "type": "integer", "minimum": 1, "maximum": 4 }
+              "mode": {
+                "type": "string",
+                "enum": [
+                  "mobile_grid",
+                  "tablet_grid"
+                ]
+              },
+              "columns": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 4
+              }
             }
           },
           "cards": {
             "type": "array",
             "minItems": 1,
-            "items": { "$ref": "#/components/schemas/DashboardCard" }
+            "items": {
+              "$ref": "#/components/schemas/DashboardCard"
+            }
           },
-          "refreshPolicy": { "type": "string", "enum": ["on_open", "scheduled"] },
-          "sharing": { "type": "string" }
+          "refreshPolicy": {
+            "type": "string",
+            "enum": [
+              "on_open",
+              "scheduled"
+            ]
+          },
+          "sharing": {
+            "type": "string"
+          }
         }
       },
       "DashboardCard": {
         "oneOf": [
           {
             "type": "object",
-            "required": ["kind", "id", "title", "metric"],
+            "required": [
+              "kind",
+              "id",
+              "title",
+              "metric"
+            ],
             "properties": {
-              "kind": { "const": "kpi" },
-              "id": { "type": "string" },
-              "title": { "type": "string" },
-              "metric": { "type": "string" },
-              "position": { "type": "array", "items": { "type": "integer" } }
+              "kind": {
+                "const": "kpi"
+              },
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "metric": {
+                "type": "string"
+              },
+              "position": {
+                "type": "array",
+                "items": {
+                  "type": "integer"
+                }
+              }
             }
           },
           {
             "type": "object",
-            "required": ["kind", "id", "title", "metric", "dimension"],
+            "required": [
+              "kind",
+              "id",
+              "title",
+              "metric",
+              "dimension"
+            ],
             "properties": {
-              "kind": { "const": "bar" },
-              "id": { "type": "string" },
-              "title": { "type": "string" },
-              "metric": { "type": "string" },
-              "dimension": { "type": "string" },
-              "position": { "type": "array", "items": { "type": "integer" } }
+              "kind": {
+                "const": "bar"
+              },
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "metric": {
+                "type": "string"
+              },
+              "dimension": {
+                "type": "string"
+              },
+              "position": {
+                "type": "array",
+                "items": {
+                  "type": "integer"
+                }
+              }
             }
           },
           {
             "type": "object",
-            "required": ["kind", "id", "title", "query"],
+            "required": [
+              "kind",
+              "id",
+              "title",
+              "query"
+            ],
             "properties": {
-              "kind": { "const": "table" },
-              "id": { "type": "string" },
-              "title": { "type": "string" },
-              "query": { "type": "string" },
-              "position": { "type": "array", "items": { "type": "integer" } }
+              "kind": {
+                "const": "table"
+              },
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "query": {
+                "type": "string"
+              },
+              "position": {
+                "type": "array",
+                "items": {
+                  "type": "integer"
+                }
+              }
             }
           }
-        ]
+        ],
+        "discriminator": {
+          "propertyName": "kind"
+        }
       },
       "AlertRule": {
         "type": "object",
-        "required": ["metricId", "predicate", "channel"],
+        "required": [
+          "metricId",
+          "predicate",
+          "channel"
+        ],
         "properties": {
-          "ruleId": { "type": "string" },
-          "metricId": { "type": "string" },
-          "predicate": { "type": "object" },
-          "schedule": { "type": "object" },
-          "channel": { "type": "string", "enum": ["in_app", "push", "email"] },
-          "status": { "type": "string", "enum": ["active", "paused"] }
+          "ruleId": {
+            "type": "string"
+          },
+          "metricId": {
+            "type": "string"
+          },
+          "predicate": {
+            "type": "object"
+          },
+          "schedule": {
+            "type": "object"
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "in_app",
+              "push",
+              "email"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "paused"
+            ]
+          }
         }
       },
       "ActionRequest": {
         "type": "object",
-        "required": ["actionType", "targetId"],
+        "required": [
+          "actionType",
+          "targetId"
+        ],
         "properties": {
           "actionType": {
             "type": "string",
-            "enum": ["create_task", "update_close_date", "update_next_step", "add_note"]
+            "enum": [
+              "create_task",
+              "update_close_date",
+              "update_next_step",
+              "add_note"
+            ]
           },
-          "targetId": { "type": "string" },
-          "payload": { "type": "object" }
+          "targetId": {
+            "type": "string"
+          },
+          "payload": {
+            "type": "object"
+          }
         },
         "additionalProperties": false
       },
       "ActionPreview": {
         "type": "object",
-        "required": ["actionId", "actionType", "changes", "requiresConfirmation"],
+        "required": [
+          "actionId",
+          "actionType",
+          "changes",
+          "requiresConfirmation"
+        ],
         "properties": {
-          "actionId": { "type": "string" },
-          "actionType": { "type": "string" },
+          "actionId": {
+            "type": "string"
+          },
+          "actionType": {
+            "type": "string"
+          },
           "changes": {
             "type": "array",
             "items": {
               "type": "object",
-              "required": ["field", "oldValue", "newValue"],
+              "required": [
+                "field",
+                "oldValue",
+                "newValue"
+              ],
               "properties": {
-                "field": { "type": "string" },
+                "field": {
+                  "type": "string"
+                },
                 "oldValue": {},
                 "newValue": {},
-                "impact": { "type": "string" }
+                "impact": {
+                  "type": "string"
+                }
               }
             }
           },
-          "requiresConfirmation": { "type": "boolean" },
-          "stepUpAuthRequired": { "type": "boolean" }
+          "requiresConfirmation": {
+            "type": "boolean"
+          },
+          "stepUpAuthRequired": {
+            "type": "boolean"
+          }
         }
       },
       "ActionReceipt": {
         "type": "object",
-        "required": ["actionId", "status", "idempotentReplay"],
+        "required": [
+          "actionId",
+          "status",
+          "idempotentReplay"
+        ],
         "properties": {
-          "actionId": { "type": "string" },
-          "status": { "type": "string", "enum": ["executed", "already_executed"] },
-          "idempotentReplay": { "type": "boolean" },
-          "externalRef": { "type": "string" },
-          "executedAt": { "type": "string", "format": "date-time" }
+          "actionId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "executed",
+              "already_executed"
+            ]
+          },
+          "idempotentReplay": {
+            "type": "boolean"
+          },
+          "externalRef": {
+            "type": "string"
+          },
+          "executedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "Feedback": {
         "type": "object",
-        "required": ["messageId", "rating"],
+        "required": [
+          "messageId",
+          "rating"
+        ],
         "properties": {
-          "messageId": { "type": "string" },
-          "rating": { "type": "string", "enum": ["up", "down"] },
-          "correction": { "type": "string" }
+          "messageId": {
+            "type": "string"
+          },
+          "rating": {
+            "type": "string",
+            "enum": [
+              "up",
+              "down"
+            ]
+          },
+          "correction": {
+            "type": "string"
+          }
         },
         "additionalProperties": false
+      },
+      "EvidenceItem": {
+        "type": "object",
+        "required": [
+          "type",
+          "ref",
+          "label"
+        ],
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "ref": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "KpiEntry": {
+        "type": "object",
+        "required": [
+          "metricId",
+          "version",
+          "unit"
+        ],
+        "properties": {
+          "metricId": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer"
+          },
+          "value": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "unit": {
+            "type": "string"
+          }
+        }
+      },
+      "HealthIndicator": {
+        "type": "object",
+        "required": [
+          "kind",
+          "detail",
+          "severity"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "warning",
+              "critical"
+            ]
+          }
+        }
+      },
+      "SignalItem": {
+        "type": "object",
+        "required": [
+          "signalType",
+          "entity",
+          "headline",
+          "source",
+          "publishedAt",
+          "confidence"
+        ],
+        "properties": {
+          "signalType": {
+            "type": "string"
+          },
+          "entity": {
+            "type": "string"
+          },
+          "headline": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "publishedAt": {
+            "type": "string"
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      },
+      "BriefingRisk": {
+        "type": "object",
+        "required": [
+          "opportunityId",
+          "name",
+          "headline",
+          "summary",
+          "nextSteps",
+          "topSeverity"
+        ],
+        "properties": {
+          "opportunityId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "headline": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "nextSteps": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "topSeverity": {
+            "type": "string",
+            "enum": [
+              "warning",
+              "critical",
+              "none"
+            ]
+          },
+          "riskCount": {
+            "type": "integer"
+          }
+        }
+      },
+      "Briefing": {
+        "type": "object",
+        "required": [
+          "asOf",
+          "scopeId",
+          "greeting",
+          "kpis",
+          "topRisks",
+          "marketSignals",
+          "overdueActions",
+          "evidence"
+        ],
+        "properties": {
+          "asOf": {
+            "type": "string"
+          },
+          "scopeId": {
+            "type": "string"
+          },
+          "greeting": {
+            "type": "string"
+          },
+          "kpis": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/KpiEntry"
+            }
+          },
+          "topRisks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BriefingRisk"
+            }
+          },
+          "marketSignals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SignalItem"
+            }
+          },
+          "overdueActions": {
+            "type": "integer"
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EvidenceItem"
+            }
+          }
+        }
+      },
+      "DealBrief": {
+        "type": "object",
+        "required": [
+          "opportunityId",
+          "accountId",
+          "name",
+          "ownerId",
+          "asOf",
+          "headline",
+          "summary",
+          "indicators",
+          "risks",
+          "nextSteps",
+          "evidence"
+        ],
+        "properties": {
+          "opportunityId": {
+            "type": "string"
+          },
+          "accountId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "ownerId": {
+            "type": "string"
+          },
+          "asOf": {
+            "type": "string"
+          },
+          "headline": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "indicators": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HealthIndicator"
+            }
+          },
+          "risks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HealthIndicator"
+            }
+          },
+          "nextSteps": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EvidenceItem"
+            }
+          }
+        }
       }
     }
   }

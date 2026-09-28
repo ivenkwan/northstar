@@ -76,3 +76,82 @@ class LiveOrchestratorDep(OrchestratorDep):
         token = self._resolver.resolve(user, date(2026, 9, 26))
         answer = orch.run(user, text, token, metrics=_dev_metrics(user))
         return serialize(answer, user)
+
+
+# ------------------------------------------------------------------ briefing wiring (§7.1/§9.1)
+
+
+def _dev_deals() -> list:
+    from orchestrator.briefing import DealSnapshot
+
+    return [
+        DealSnapshot(opportunity_id="opp_1", account_id="acct_1", name="ACME renewal", owner_id="s1",
+                     amount_minor=400_000, stage="middle", probability=0.6, close_date="2026-12-15",
+                     stage_age_days=70, days_since_activity=30, close_date_push_count=2,
+                     has_next_step=False),
+        DealSnapshot(opportunity_id="opp_2", account_id="acct_2", name="BetaSoft expansion", owner_id="s1",
+                     amount_minor=250_000, stage="early", probability=0.3, close_date="2027-03-31",
+                     stage_age_days=10, days_since_activity=4, close_date_push_count=0,
+                     has_next_step=True),
+    ]
+
+
+def _dev_signals() -> list:
+    from orchestrator.briefing import SignalItem
+
+    return [
+        SignalItem(signal_type="expansion", entity="Acme Corp",
+                   headline="Acme expands APAC data-centre footprint",
+                   source="licensed_wire", published_at="2026-09-26T08:00:00Z", confidence=0.9),
+        SignalItem(signal_type="regulation", entity="BetaSoft",
+                   headline="Regulator fines BetaSoft over disclosures",
+                   source="licensed_wire", published_at="2026-09-25T10:00:00Z", confidence=0.8),
+    ]
+
+
+def _briefing_out(b) -> dict:
+    kpis = [{"metricId": k.metric_id, "version": k.version, "value": k.value, "unit": k.unit} for k in b.kpis]
+    top_risks = [{
+        "opportunityId": r.opportunity_id, "name": r.name, "headline": r.headline,
+        "summary": list(r.summary), "nextSteps": list(r.next_steps),
+        "topSeverity": r.indicators[0].severity if r.indicators else "none",
+        "riskCount": len(r.indicators),
+    } for r in b.top_risks]
+    signals = [{"signalType": s.signal_type, "entity": s.entity, "headline": s.headline,
+                "source": s.source, "publishedAt": s.published_at, "confidence": s.confidence}
+               for s in b.market_signals]
+    evidence = [{"type": e.type, "ref": e.ref, "label": e.label} for e in b.evidence]
+    return {"asOf": b.as_of, "scopeId": b.scope_id, "greeting": b.greeting, "kpis": kpis,
+            "topRisks": top_risks, "marketSignals": signals,
+            "overdueActions": b.overdue_actions, "evidence": evidence}
+
+
+def _deal_brief_out(brief) -> dict:
+    ind = [{"kind": i.kind, "detail": i.detail, "severity": i.severity} for i in brief.indicators]
+    ev = [{"type": e.type, "ref": e.ref, "label": e.label} for e in brief.evidence]
+    return {"opportunityId": brief.opportunity_id, "accountId": brief.account_id, "name": brief.name,
+            "ownerId": brief.owner_id, "asOf": brief.as_of, "headline": brief.headline,
+            "summary": list(brief.summary), "indicators": ind, "risks": ind,
+            "nextSteps": list(brief.next_steps), "evidence": ev}
+
+
+class LiveBriefingDep:
+    """Wires the briefing engines with dev data; production swaps the data sources."""
+
+    async def today(self, user: str) -> dict:
+        from orchestrator.briefing import compose_daily_briefing
+
+        graph, _ = _dev_org()
+        salesperson = next(p.salesperson_id for p in graph.people if p.user_id == user)
+        rows = _dev_metrics(user)
+        deals = [d for d in _dev_deals() if d.owner_id == salesperson]
+        briefing = compose_daily_briefing("2026-09-27T08:00:00Z", user, rows, deals, _dev_signals())
+        return _briefing_out(briefing)
+
+    async def deal_brief(self, opportunity_id: str) -> dict | None:
+        from orchestrator.briefing import compose_deal_brief
+
+        for d in _dev_deals():
+            if d.opportunity_id == opportunity_id:
+                return _deal_brief_out(compose_deal_brief(d, "2026-09-27T08:00:00Z"))
+        return None

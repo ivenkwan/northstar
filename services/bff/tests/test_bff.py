@@ -57,7 +57,8 @@ def test_committed_spec_paths_match_app_routes():
     missing = []
     for path, ops in spec["paths"].items():
         fastapi_path = path.replace("{conversationId}", "{conversation_id}") \
-                           .replace("{metricId}", "{metric_id}").replace("{actionId}", "{action_id}")
+                           .replace("{metricId}", "{metric_id}").replace("{actionId}", "{action_id}") \
+                           .replace("{opportunityId}", "{opportunity_id}")
         for method in ops:
             if (fastapi_path, method.lower()) not in app_routes:
                 missing.append(f"{method} {path}")

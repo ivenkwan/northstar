@@ -175,6 +175,48 @@ async def query_attainment(assigneeId: str, period: str,
     return await metrics.rows("attainment", {"assigneeId": assigneeId, "period": period})
 
 
+# ------------------------------------------------------------------ briefings (§7.1, §9.1)
+
+
+class BriefingDepProtocol:
+    async def today(self, user: str) -> dict:
+        raise HTTPException(status_code=503, detail="briefing engine unavailable")
+
+    async def deal_brief(self, opportunity_id: str) -> dict | None:
+        raise HTTPException(status_code=503, detail="briefing engine unavailable")
+
+
+_briefing: BriefingDepProtocol = BriefingDepProtocol()
+
+
+def _get_briefing_dep() -> BriefingDepProtocol:
+    import os
+
+    if os.environ.get("NORTHSTAR_BFF_MODE", "live") == "stub":
+        return _briefing
+    from .composition import LiveBriefingDep
+
+    return LiveBriefingDep()
+
+
+@app.get("/api/v1/briefings/today")
+async def today_briefing(authorization: str | None = Header(default=None),
+                         briefing: BriefingDepProtocol = Depends(_get_briefing_dep)) -> dict:
+    user = _user(authorization)
+    return await briefing.today(user)
+
+
+@app.get("/api/v1/opportunities/{opportunity_id}/brief")
+async def opportunity_brief(opportunity_id: str,
+                            authorization: str | None = Header(default=None),
+                            briefing: BriefingDepProtocol = Depends(_get_briefing_dep)) -> dict:
+    _user(authorization)
+    result = await briefing.deal_brief(opportunity_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail=f"unknown opportunity {opportunity_id}")
+    return result
+
+
 @app.get("/api/v1/metrics/{metric_id}/lineage")
 async def metric_lineage(metric_id: str,
                          authorization: str | None = Header(default=None)) -> dict:

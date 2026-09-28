@@ -43,3 +43,12 @@ describe("widget union + exhaustive registry (§17.5, ADR-036)", () => {
     }
   });
 });
+
+describe("Today route (§10.1 first destination)", () => {
+  it("resolves Today deep links without params", () => {
+    expect(resolveDeepLink("northstar://Today")).toEqual({ route: "Today" });
+  });
+  it("forward-compatible params on Today are dropped", () => {
+    expect(resolveDeepLink("northstar://Today?future=x")).toEqual({ route: "Today" });
+  });
+});

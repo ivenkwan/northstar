@@ -225,6 +225,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/briefings/today": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Daily seller briefing (§7.1): KPIs, top risks, market signals */
+        get: operations["getTodayBriefing"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/opportunities/{opportunityId}/brief": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Sourced opportunity brief and risks (§9.1, §19.2) */
+        get: operations["getOpportunityBrief"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -405,6 +439,64 @@ export interface components {
             /** @enum {string} */
             rating: "up" | "down";
             correction?: string;
+        };
+        EvidenceItem: {
+            type: string;
+            ref: string;
+            label: string;
+        };
+        KpiEntry: {
+            metricId: string;
+            version: number;
+            value?: number | null;
+            unit: string;
+        };
+        HealthIndicator: {
+            kind: string;
+            detail: string;
+            /** @enum {string} */
+            severity: "warning" | "critical";
+        };
+        SignalItem: {
+            signalType: string;
+            entity: string;
+            headline: string;
+            source: string;
+            publishedAt: string;
+            confidence: number;
+        };
+        BriefingRisk: {
+            opportunityId: string;
+            name: string;
+            headline: string;
+            summary: string[];
+            nextSteps: string[];
+            /** @enum {string} */
+            topSeverity: "warning" | "critical" | "none";
+            riskCount?: number;
+        };
+        Briefing: {
+            asOf: string;
+            scopeId: string;
+            greeting: string;
+            kpis: components["schemas"]["KpiEntry"][];
+            topRisks: components["schemas"]["BriefingRisk"][];
+            marketSignals: components["schemas"]["SignalItem"][];
+            overdueActions: number;
+            evidence: components["schemas"]["EvidenceItem"][];
+        };
+        DealBrief: {
+            opportunityId: string;
+            accountId: string;
+            name: string;
+            ownerId: string;
+            asOf: string;
+            headline: string;
+            summary: string[];
+            indicators: components["schemas"]["HealthIndicator"][];
+            risks: components["schemas"]["HealthIndicator"][];
+            nextSteps: string[];
+            evidence: components["schemas"]["EvidenceItem"][];
         };
     };
     responses: {
@@ -749,6 +841,51 @@ export interface operations {
                 };
                 content?: never;
             };
+        };
+    };
+    getTodayBriefing: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Today briefing */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Briefing"];
+                };
+            };
+            401: components["responses"]["ApiError"];
+        };
+    };
+    getOpportunityBrief: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                opportunityId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deal brief */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DealBrief"];
+                };
+            };
+            401: components["responses"]["ApiError"];
+            404: components["responses"]["ApiError"];
         };
     };
 }
