@@ -1,0 +1,21 @@
+{
+  "expo": {
+    "name": "Sales Northstar",
+    "slug": "northstar",
+    "version": "0.1.0",
+    "scheme": "northstar",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#FFFFFF",
+    "android": {
+      "package": "com.northstar.dev",
+      "usesCleartextTraffic": true
+    },
+    "extra": {
+      "note": "Dev preview only. Cleartext is enabled solely for LAN http access to the local docker-compose stack; production builds are HTTPS-only through APISIX."
+    },
+    "plugins": [
+      "expo-status-bar"
+    ]
+  }
+}

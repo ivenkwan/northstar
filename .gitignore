@@ -23,3 +23,5 @@ dist/
 # Local tooling
 .turbo/
 mise.lock
+apps/mobile/.expo/
+apps/mobile/dist/

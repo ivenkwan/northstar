@@ -1,8 +1,8 @@
 /** Typed navigation (§17.7): single root parameter list; deep links runtime-validated first. */
 import { parseDeepLink } from "@northstar/validation";
 
-import type { AccountId, DashboardId, FiscalPeriod, SalespersonId, ThreadId } from "./ids.js";
-import { accountId as mkAccount, dashboardId as mkDashboard, fiscalPeriod as mkPeriod, threadId as mkThread } from "./ids.js";
+import type { AccountId, DashboardId, FiscalPeriod, SalespersonId, ThreadId } from "./ids";
+import { accountId as mkAccount, dashboardId as mkDashboard, fiscalPeriod as mkPeriod, threadId as mkThread } from "./ids";
 
 export type RootStackParamList = {
   Home: undefined;

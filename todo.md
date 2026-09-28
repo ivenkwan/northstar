@@ -223,6 +223,10 @@ The PRD defines Phases 0–3. Phase 4 is this repository's closure phase: it com
 - [x] Dockerfiles for bff/metrics/byok (uv workspace-aware, frozen lockfile) + `uvicorn` as a declared dependency + metrics `/healthz`; python-based compose healthchecks (slim images ship no curl); local OTel collector config (prod config untouched).
 - [x] **Stack verified running**: `docker compose up` → healthz green on all three services; metric lineage serving the governed catalog; a full conversation through `/api/v1/conversations/{id}/messages` returning the §19.3 wire shape with real governed numbers (attainment 60% v3 from the certified engine); SSE event order `message_start → component → message_stop`; unauthenticated call returning the typed `UNAUTHENTICATED` envelope. 184 Python tests green.
 
+### Phase 4 addendum 2 — Android app shell via Expo Go (2026-09-27)
+
+- [x] `apps/mobile` is now a runnable Expo SDK 57 app (React Native 0.86.3, TypeScript ~6.0.3, React Navigation native-stack, pnpm hoisted layout via `.npmrc`): entry + `app.json` (northstar:// scheme, dev-only cleartext for LAN), Home screen (backend health + editable API base) and Conversation/Ask screen (question → §19.3 answer with KPI rows, evidence, warnings). Transport confined to `src/transport.ts` (the only fetch site, §17.3); responses Zod-validated at the boundary (ADR-026); errors mapped through `USER_FACING_MESSAGES` (§17.8). **Android bundle verified headlessly: `expo export --platform android` — 838 modules.** Test on a phone: install Expo Go (Play Store), same Wi-Fi, `pnpm --filter @northstar/mobile start`, scan the QR. Bare-RN production build (JDK + Android Studio + adb) migrates from this shell per §17.1.
+
 ---
 
 ## Next build iteration — verified 2026-09-27 audit
@@ -255,6 +259,7 @@ Full-marker audit against repository state (this date). Everything repo-side tha
 
 ## Change log
 
+- **2026-09-27:** Android app shell: Expo SDK 57 wired into `apps/mobile` (RN 0.86.3, TS ~6.0.3, React Navigation), Home + Ask screens against the local stack, fetch confined to the transport module, Zod boundary at the response edge; Metro import fixes (extensionless relative imports in mobile/contracts/validation); Android bundle export verified (838 modules). 188 Python tests + 10 turbo tasks green.
 - **2026-09-27:** Full todo.md marker audit: Phase 1 sprints/scenarios/criteria re-tickd against verified evidence (188 tests after adding Scenario D composer tests); Bootstrap toolchain/validation/security items ticked with annotations; genuinely open items re-marked with reasons; "Next build iteration" section consolidates all remaining repo-side gaps (12 items) and external gates.
 - **2026-09-27:** README updated to system snapshot v1.0 (2026-09-27): as-built system diagram and data-flow diagram (Mermaid), build-state key, status line and ADR range refreshed to Phases 0–4.
 - **2026-09-26:** Made the stack run end-to-end locally: BFF↔orchestrator↔metrics composition root, three service Dockerfiles with entrypoints, compose fixes (build contexts, curl-free healthchecks, local otel config), and a live smoke (healthz, lineage, §19.3 conversation with governed metrics, SSE order, typed 401). 184 tests green.

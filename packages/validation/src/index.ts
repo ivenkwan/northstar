@@ -11,11 +11,11 @@ export {
   MAX_SUBGRAPH_NODES,
   SubgraphSchema,
   parseDeepLink,
-} from "./schemas.js";
+} from "./schemas";
 export type {
   ConversationResponse,
   DashboardCard,
   DashboardDefinition,
   DeepLink,
   Subgraph,
-} from "./schemas.js";
+} from "./schemas";

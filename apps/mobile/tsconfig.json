@@ -1,5 +1,13 @@
 {
   "extends": "../../tsconfig.base.json",
-  "compilerOptions": { "rootDir": "src" },
-  "include": ["src"]
+  "compilerOptions": {
+    "rootDir": ".",
+    "esModuleInterop": true,
+    "jsx": "react-jsx",
+    "types": ["react-native"],
+    "skipLibCheck": true
+  },
+  "include": ["src", "screens", "App.tsx", "index.ts"],
+  "exclude": ["test"]
 }
+

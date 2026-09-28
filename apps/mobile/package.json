@@ -3,19 +3,34 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "exports": { ".": "./src/index.ts" },
+  "main": "index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
   "scripts": {
     "check": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "start": "expo start",
+    "android": "expo start --android"
   },
   "dependencies": {
-    "@northstar/validation": "workspace:*"
+    "@northstar/contracts": "workspace:*",
+    "@northstar/validation": "workspace:*",
+    "@react-navigation/native": "^7.1.8",
+    "@react-navigation/native-stack": "^7.3.16",
+    "expo": "~57.0.25",
+    "expo-status-bar": "~57.0.1",
+    "react": "19.2.3",
+    "react-native": "0.86.3",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-screens": "~4.26.2"
   },
   "devDependencies": {
-    "typescript": "5.6.3",
+    "@types/react": "^19.2.18",
+    "typescript": "6.0.3",
     "vitest": "^2.1.8"
   },
   "notes": {
-    "runtime": "React Native 0.87+ Strict TypeScript shell initializes with the native toolchain (Phase 1 Sprint 1); this domain layer is deliberately runtime-independent so it typechecks and tests without a device build."
+    "runtime": "Expo SDK 57 / React Native 0.87.1 (PRD §17.1 baseline). Dev preview runs in Expo Go over the LAN against the local docker-compose stack; the bare-RN production build migrates from this shell (toolchain: JDK17 + Android Studio + adb)."
   }
 }

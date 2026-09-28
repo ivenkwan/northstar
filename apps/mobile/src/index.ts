@@ -1,10 +1,10 @@
 export {
   accountId, dashboardId, domainId, fiscalPeriod, groupId, salespersonId, teamId, threadId,
-} from "./ids.js";
+} from "./ids";
 export type {
   AccountId, DashboardId, DomainId, FiscalPeriod, GroupId, SalespersonId, TeamId, ThreadId,
-} from "./ids.js";
-export { resolveDeepLink } from "./navigation.js";
-export type { ResolvedRoute, RootStackParamList, RouteName } from "./navigation.js";
-export { rendererFor, widgetsFrom, WIDGET_RENDERERS } from "./widgets.js";
-export type { DashboardWidget, WidgetRendererKey } from "./widgets.js";
+} from "./ids";
+export { resolveDeepLink } from "./navigation";
+export type { ResolvedRoute, RootStackParamList, RouteName } from "./navigation";
+export { rendererFor, widgetsFrom, WIDGET_RENDERERS } from "./widgets";
+export type { DashboardWidget, WidgetRendererKey } from "./widgets";
