@@ -1,18 +1,25 @@
 {
   "name": "northstar",
   "private": true,
+  "type": "module",
   "packageManager": "pnpm@9.15.0",
   "engines": { "node": ">=22" },
   "scripts": {
     "build": "turbo run build",
     "check": "turbo run check",
     "test": "turbo run test",
+    "lint": "eslint apps packages",
     "contracts:generate": "openapi-typescript services/bff/openapi/openapi.json -o packages/contracts/src/generated/schema.d.ts",
-    "contracts:check": "openapi-typescript services/bff/openapi/openapi.json -o packages/contracts/src/generated/schema.d.ts && git diff --exit-code -- packages/contracts/src/generated/schema.d.ts"
+    "contracts:check": "openapi-typescript services/bff/openapi/openapi.json -o packages/contracts/src/generated/schema.d.ts && git diff --exit-code -- packages/contracts/src/generated/schema.d.ts",
+    "contracts:lint": "spectral lint services/bff/openapi/openapi.json --ruleset tools/codegen/spectral.yaml"
   },
   "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "@stoplight/spectral-cli": "^6.14.2",
+    "eslint": "^9.17.0",
     "openapi-typescript": "^7.5.0",
     "turbo": "^2.3.3",
-    "typescript": "5.6.3"
+    "typescript": "5.6.3",
+    "typescript-eslint": "^8.18.0"
   }
 }

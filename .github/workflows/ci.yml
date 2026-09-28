@@ -30,10 +30,14 @@ jobs:
         with: { version: "9.15.0" }
       - name: Install
         run: pnpm install --frozen-lockfile
+      - name: OpenAPI lint (§17.4 step 2)
+        run: pnpm contracts:lint
       - name: Generate contracts
         run: pnpm contracts:generate
       - name: Contract drift check (§17.4)
         run: git diff --exit-code -- packages/contracts/src/generated/schema.d.ts
+      - name: ESLint prohibited patterns (§17.3)
+        run: pnpm lint
       - name: Typecheck + tests (all packages)
         run: pnpm turbo check test
 

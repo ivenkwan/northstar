@@ -28,6 +28,8 @@ jobs:
           uv run pytest -q
           python tools/adr_review.py
           pnpm install --frozen-lockfile
+          pnpm contracts:lint
+          pnpm lint
           pnpm turbo check test
           pnpm contracts:generate
           git diff --exit-code -- packages/contracts/src/generated/schema.d.ts

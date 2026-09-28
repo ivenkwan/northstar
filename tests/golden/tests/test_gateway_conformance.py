@@ -118,3 +118,55 @@ def test_gw09_content_blocks_and_stop_reason_survive_validation():
     msg = AnthropicMessage.model_validate(payload)
     assert all(isinstance(b, AnthropicContentBlock) for b in msg.content)
     assert msg.usage.output_tokens > 0
+
+
+# ------------------------------------------------------------------ GW-10: bounded retry/fallback (criterion 6)
+
+
+def _ai_routes() -> dict[str, dict]:
+    out: dict[str, dict] = {}
+    for r in routes()["routes"]:
+        plugins = r.get("plugins", {})
+        for key in ("ai-proxy", "ai-proxy-multi"):
+            if key in plugins:
+                out[f"{r['name']} ({key})"] = plugins[key]
+    return out
+
+
+def test_gw10_multi_provider_policy_has_bounded_retries():
+    """§15.4 internal-capability-pool: retries bounded; no unbounded latency."""
+    multi = _ai_routes()["internal-capability-pool (ai-proxy-multi)"]
+    retries = multi["retries"]
+    assert 1 <= retries["max_retries"] <= 3                      # bounded, small
+    assert retries["retry_on"] == ["http_429", "http_5xx"]       # only retryable classes
+    assert retries["retry_on_failure_within_ms"] <= 10000        # never retry old calls
+
+
+def test_gw10_retry_window_never_exceeds_timeout():
+    """A retry can never extend a call past its own timeout — no duplicate long calls."""
+    multi = _ai_routes()["internal-capability-pool (ai-proxy-multi)"]
+    assert multi["retries"]["retry_on_failure_within_ms"] < multi["timeout_ms"]
+    assert multi["timeout_ms"] < multi["max_stream_duration_ms"]
+
+
+def test_gw10_all_ai_routes_have_time_and_size_bounds():
+    for name, cfg in _ai_routes().items():
+        assert cfg["timeout_ms"] > 0, f"{name}: missing timeout"
+        assert cfg["max_response_bytes"] > 0, f"{name}: missing response size cap"
+        if "max_stream_duration_ms" in cfg:
+            assert cfg["timeout_ms"] <= cfg["max_stream_duration_ms"], f"{name}: timeout exceeds stream cap"
+        logging_cfg = cfg.get("logging", {})
+        assert logging_cfg.get("payloads") is not True            # payloads off everywhere (§21)
+
+
+def test_gw10_no_platform_key_fallback():
+    """Criterion 6: every credential on every AI route resolves from tenant BYOK in Vault."""
+    for name, cfg in _ai_routes().items():
+        auth = cfg.get("auth") or {}
+        providers = cfg.get("provider-order") or [{"provider": cfg.get("provider", ""), "auth": auth}]
+        for p in providers:
+            pa = p.get("auth", auth)
+            values = list(pa.get("header", {}).values())
+            assert values, f"{name}: no credential"
+            for v in values:
+                assert "$SECRET://vault/1/byok/" in v, f"{name}/{p.get('provider')}: platform fallback forbidden"

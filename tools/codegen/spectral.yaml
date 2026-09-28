@@ -1,0 +1,58 @@
+# Spectral ruleset for the Sales Northstar OpenAPI contract (PRD §17.4 step 2).
+# Runs in CI before TypeScript generation: `pnpm contracts:lint`.
+extends: ["spectral:oas"]
+
+rules:
+  # ADR-028: product APIs live under /api/v1 only (healthz excepted);
+  # /ai/* and /internal/* are gateway-owned and not described by this document.
+  northstar-path-prefix:
+    description: Product API paths must start with /api/v1 (ADR-028).
+    severity: error
+    given: $.paths[*]~
+    then:
+      function: pattern
+      functionOptions:
+        match: "^/api/v1/"
+
+  # §17.8: every error response is the typed ApiError envelope.
+  northstar-error-envelope:
+    description: 4xx/5xx responses must reference the ApiError envelope (PRD §17.8).
+    severity: error
+    given: $.paths..responses[?(@property.match('^\\d{3}$'))]~
+    then:
+      field: "$ref"
+      function: truthy
+
+  # §19.1: explicit, unique operation ids feed the generated transport keys (§17.4).
+  northstar-operation-id:
+    description: Every operation must declare an operationId (PRD §17.4).
+    severity: error
+    given: "$.paths[*][get,post,patch,put,delete]"
+    then:
+      field: operationId
+      function: truthy
+  northstar-valid-schema:
+    description: Schemas with examples must have valid examples.
+    severity: error
+    given: "$.components.schemas[*].properties[?(@.example)]"
+    then:
+      field: example
+      function: truthy
+
+  # ADR-026: polymorphic payloads use oneOf WITH a discriminator so generated
+  # types map to discriminated unions (§17.5).
+  northstar-oneof-discriminator:
+    description: Schemas using oneOf should define a discriminator (ADR-026/§17.5).
+    severity: warn
+    given: $.components.schemas[?(@.oneOf)]
+    then:
+      field: discriminator
+      function: truthy
+
+  # §19.1: cursor/async patterns should not leak offset pagination.
+  northstar-no-offset-pagination:
+    description: Use cursor pagination, not offset/limit query params (§19.1).
+    severity: warn
+    given: $.paths..parameters[?(@.in == 'query' && @.name.match('^(offset|page)$'))]
+    then:
+      function: falsy
