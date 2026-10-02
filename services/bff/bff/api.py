@@ -14,6 +14,7 @@ from datetime import UTC, datetime
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Request, Response
 from fastapi.responses import JSONResponse, StreamingResponse
+from orchestrator.errors import OrchestratorError
 from pydantic import BaseModel, Field
 
 app = FastAPI(title="northstar-bff", version="0.1.0")
@@ -36,6 +37,17 @@ async def typed_error(request: Request, exc: HTTPException) -> JSONResponse:
         content=ApiErrorBody(code=code, message=str(exc.detail),
                              correlationId=request.headers.get("x-correlation-id", "unknown"),
                              retryable=exc.status_code >= 500).model_dump(),
+    )
+
+
+@app.exception_handler(OrchestratorError)
+async def orchestrator_error(request: Request, exc: OrchestratorError) -> JSONResponse:
+    """Fail-closed provider errors (ADR-023) surface their own typed code in the §17.8 envelope."""
+    return JSONResponse(
+        status_code=exc.status,
+        content=ApiErrorBody(code=exc.code.value, message=exc.message,
+                             correlationId=request.headers.get("x-correlation-id", "unknown"),
+                             retryable=exc.retryable).model_dump(),
     )
 
 

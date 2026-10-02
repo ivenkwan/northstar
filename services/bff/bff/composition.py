@@ -12,6 +12,7 @@ import os
 from datetime import date
 from uuid import uuid4
 
+from orchestrator.errors import ConfigError
 from orchestrator.pipeline import Intent, MetricRow, Orchestrator, Risk, ScriptedProvider
 from orchestrator.scope import OrgGraph, Person, Role, ScopeResolver, Team
 
@@ -63,13 +64,29 @@ def serialize(answer, user_id: str) -> dict:
     }
 
 
+def _select_provider():
+    """NORTHSTAR_PROVIDER selection — exact, case-sensitive, fail-closed (NFR-5).
+
+    Unset/`scripted` keeps the deterministic default (zero test regression);
+    `deepseek` wires the real adapter; anything else refuses to boot.
+    """
+    name = os.environ.get("NORTHSTAR_PROVIDER", "scripted")
+    if name == "scripted":
+        return ScriptedProvider(intent=Intent.PIPELINE_QUESTION, risk=Risk.LOW)
+    if name == "deepseek":
+        from orchestrator.provider_deepseek import DeepSeekProvider
+
+        return DeepSeekProvider()
+    raise ConfigError(f"Unknown NORTHSTAR_PROVIDER value: {name!r}")
+
+
 class LiveOrchestratorDep(OrchestratorDep):
-    """Runs the real 12-step pipeline in-process with the scripted model provider."""
+    """Runs the real 12-step pipeline in-process with the selected model provider."""
 
     def __init__(self) -> None:
         graph, roles = _dev_org()
         self._resolver = ScopeResolver(graph, roles)
-        self._provider = ScriptedProvider(intent=Intent.PIPELINE_QUESTION, risk=Risk.LOW)
+        self._provider = _select_provider()
 
     async def converse(self, user: str, text: str) -> dict:
         orch = Orchestrator(self._provider)
