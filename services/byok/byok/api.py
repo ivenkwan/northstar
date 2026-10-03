@@ -6,7 +6,7 @@ from fastapi import FastAPI, Header, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from .service import Bindings, ByokError, CredentialService, InMemoryVault, redacted
+from .service import ApiErrorCode, Bindings, ByokError, CredentialService, InMemoryVault, redacted
 
 app = FastAPI(title="northstar-byok", version="0.1.0")
 
@@ -61,6 +61,24 @@ async def register_credential(
 @app.get("/api/v1/admin/byok/credentials")
 async def list_credentials(x_tenant_id: str = Header(alias="x-tenant-id")) -> dict:
     return {"credentials": [redacted(r) for r in _svc().records.values() if r.tenant_id == x_tenant_id]}
+
+
+@app.get("/api/v1/admin/byok/credentials/{credential_id}/bindings")
+async def get_bindings(credential_id: str, x_tenant_id: str = Header(alias="x-tenant-id")) -> dict:
+    rec = _svc()._get(credential_id)
+    if rec.tenant_id != x_tenant_id:
+        raise ByokError(ApiErrorCode.FORBIDDEN, "credential not accessible", 403)
+    return {"credentialId": credential_id, "bindings": rec.bindings.model_dump()}
+
+
+@app.post("/api/v1/admin/byok/credentials/{credential_id}/test")
+async def test_credential(credential_id: str, x_tenant_id: str = Header(alias="x-tenant-id")) -> dict:
+    rec = _svc()._get(credential_id)
+    if rec.tenant_id != x_tenant_id:
+        raise ByokError(ApiErrorCode.FORBIDDEN, "credential not accessible", 403)
+    secret = _svc().vault.resolve(rec.vault_reference)
+    passed = _svc().probe(rec.provider, secret)
+    return {"credentialId": credential_id, "status": "ok" if passed else "failed", "probePassed": passed}
 
 
 @app.post("/api/v1/admin/byok/credentials/{credential_id}/activate")
