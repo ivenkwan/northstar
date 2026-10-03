@@ -1,5 +1,5 @@
 import pytest
-from byok.api import app
+from byok.api import app, _svc
 from byok.service import (
     ApiErrorCode,
     Bindings,
@@ -109,3 +109,74 @@ def test_api_error_envelope_shape():
     body = resp.json()
     assert set(body) >= {"credentialId", "status", "fingerprint"}
     assert "credential" not in body and "vaultReference" not in body
+
+
+def test_byok_api_full_surface():
+    """Tests list, get_bindings, test, activate, rotate, and revoke endpoints (§16.5)."""
+    client = TestClient(app, raise_server_exceptions=False)
+    headers = {"x-tenant-id": "tenant_api", "x-actor": "admin_api", "idempotency-key": "idem_api_1"}
+
+    # 1. Register
+    resp = client.post(
+        "/api/v1/admin/byok/credentials",
+        json={"provider": "anthropic", "displayName": "Primary Anthropic",
+              "credential": "sk-ant-verysecret-999999", "bindings": BINDINGS.model_dump()},
+        headers=headers,
+    )
+    assert resp.status_code == 200
+    cred_id = resp.json()["credentialId"]
+    assert resp.json()["status"] == "pending_verification"
+
+    # 2. List credentials
+    list_resp = client.get("/api/v1/admin/byok/credentials", headers={"x-tenant-id": "tenant_api"})
+    assert list_resp.status_code == 200
+    creds = list_resp.json()["credentials"]
+    assert any(c["credentialId"] == cred_id for c in creds)
+
+    # 3. Get bindings
+    bindings_resp = client.get(
+        f"/api/v1/admin/byok/credentials/{cred_id}/bindings",
+        headers={"x-tenant-id": "tenant_api"},
+    )
+    assert bindings_resp.status_code == 200
+    assert bindings_resp.json()["bindings"]["allowed_protocols"] == ["anthropic-messages"]
+
+    # Cross-tenant get_bindings rejected
+    forbidden_bindings = client.get(
+        f"/api/v1/admin/byok/credentials/{cred_id}/bindings",
+        headers={"x-tenant-id": "other_tenant"},
+    )
+    assert forbidden_bindings.status_code == 403
+
+    # 4. Test credential
+    test_resp = client.post(
+        f"/api/v1/admin/byok/credentials/{cred_id}/test",
+        headers={"x-tenant-id": "tenant_api"},
+    )
+    assert test_resp.status_code == 200
+    assert test_resp.json()["probePassed"] is True
+
+    # 5. Activate
+    activate_resp = client.post(
+        f"/api/v1/admin/byok/credentials/{cred_id}/activate",
+        headers={"x-actor": "admin_api"},
+    )
+    assert activate_resp.status_code == 200
+    assert activate_resp.json()["status"] == "active"
+
+    # 6. Rotate
+    rotate_resp = client.post(
+        f"/api/v1/admin/byok/credentials/{cred_id}/rotate",
+        json={"provider": "anthropic", "displayName": "Primary Anthropic Rotated",
+              "credential": "sk-ant-verysecret-888888", "bindings": BINDINGS.model_dump()},
+        headers={"x-actor": "admin_api"},
+    )
+    assert rotate_resp.status_code == 200
+
+    # 7. Revoke
+    revoke_resp = client.delete(
+        f"/api/v1/admin/byok/credentials/{cred_id}",
+        headers={"x-actor": "admin_api"},
+    )
+    assert revoke_resp.status_code == 200
+    assert revoke_resp.json()["status"] == "revoked"
